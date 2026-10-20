@@ -109,3 +109,36 @@ static func grain_texture() -> Texture2D:
 ## Cubre un rectángulo con grano (el nodo debe tener texture_repeat activado).
 static func grain(ci: CanvasItem, rect: Rect2, strength := 0.25) -> void:
 	ci.draw_texture_rect(grain_texture(), rect, true, Color(1, 1, 1, strength))
+
+
+## Tablón de madera con vetas y clavos (o nube esponjosa si cloud es true), para plataformas.
+static func plank(ci: CanvasItem, rect: Rect2, color: Color, dark: Color, cloud := false) -> void:
+	if cloud:
+		var n := maxi(int(rect.size.x / 11.0), 1)
+		for i in n + 1:
+			ci.draw_circle(rect.position + Vector2(i * rect.size.x / n, 7.5), 8.5, dark)
+		for i in n + 1:
+			var c := rect.position + Vector2(i * rect.size.x / n, 4.5)
+			gradient_fill(ci, circle(c, 7.5, 16), Color.WHITE, color.lerp(dark, 0.4))
+		for i in n:
+			ci.draw_circle(rect.position + Vector2((i + 0.3) * rect.size.x / n, 1.5), 1.8, Color(1, 1, 1, 0.8))
+		return
+	shape(ci, rounded_rect(rect, 3.0), color.lightened(0.12), dark.lightened(0.15), 1.5)
+	for k in 2: # vetas de la madera
+		var grain_line := PackedVector2Array()
+		var x := rect.position.x + 3.0
+		while x < rect.end.x - 2.0:
+			grain_line.append(Vector2(x, rect.position.y + 4.5 + k * 3.5 + sin(x * 0.25 + k * 2.0) * 0.7))
+			x += 5.0
+		if grain_line.size() > 1:
+			ci.draw_polyline(grain_line, Color(dark, 0.45), 1.0, true)
+	var joint := rect.position.x + 32.0
+	while joint < rect.end.x - 1.0: # juntas entre tablones
+		ci.draw_line(Vector2(joint, rect.position.y + 1.5), Vector2(joint, rect.end.y - 1.5), Color(dark, 0.8), 1.2)
+		joint += 32.0
+	var nail := rect.position.x + 5.0
+	while nail < rect.end.x:
+		ci.draw_circle(Vector2(nail, rect.get_center().y), 1.3, dark.darkened(0.3))
+		ci.draw_circle(Vector2(nail - 0.4, rect.get_center().y - 0.4), 0.5, Color(1, 1, 1, 0.5))
+		nail += 32.0
+	ci.draw_line(rect.position + Vector2(3, 1.6), Vector2(rect.end.x - 3, rect.position.y + 1.6), Color(1, 1, 1, 0.35), 1.2)

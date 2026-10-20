@@ -21,16 +21,16 @@ func _on_body_entered(body: Node2D) -> void:
 
 
 func _draw() -> void:
-	var outline := Color("1e1428")
 	var top := -16.0 + squeeze
-	draw_rect(Rect2(-13, -4, 26, 4), outline)
-	draw_rect(Rect2(-12, -3.5, 24, 3), Color("6e7781"))
+	DrawKit.contact_shadow(self, Vector2.ZERO, 14.0, 0.22)
+	DrawKit.shape(self, DrawKit.rounded_rect(Rect2(-12.5, -4, 25, 4), 1.5), Color("aeb7c2"), Color("5d6670"), 1.4)
 	var coil := PackedVector2Array()
 	for i in 7:
 		var y := lerpf(-4.0, top + 3.0, i / 6.0)
 		coil.append(Vector2(-8.0 if i % 2 == 0 else 8.0, y))
-	draw_polyline(coil, outline, 4.0, true)
-	draw_polyline(coil, Color("c9d1d9"), 2.0, true)
-	draw_rect(Rect2(-14, top - 1, 28, 6), outline)
-	draw_rect(Rect2(-13, top, 26, 4), Color("e63946"))
-	draw_rect(Rect2(-13, top, 26, 1.5), Color("ff8a92"))
+	draw_polyline(coil, DrawKit.OUTLINE, 4.5, true)
+	draw_polyline(coil, Color("c9d1d9"), 2.5, true)
+	draw_polyline(coil, Color(1, 1, 1, 0.6), 0.8, true)
+	var plate := DrawKit.rounded_rect(Rect2(-13.5, top - 1, 27, 6), 3.0)
+	DrawKit.shape(self, plate, Color("ff6b74"), Color("c42d3a"), 1.5)
+	draw_line(Vector2(-10, top + 0.4), Vector2(10, top + 0.4), Color(1, 1, 1, 0.6), 1.2)

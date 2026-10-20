@@ -55,6 +55,7 @@ scripts/game.gd          Autoload "Game": puntos, vidas, mejora, punto de contro
 scripts/settings.gd      Autoload "Settings": opciones del jugador
 scripts/sfx.gd           Autoload "Sfx": sonidos y música (sintetizados por código)
 scripts/fx.gd            Clase "Fx": partículas, escombros y textos flotantes
+scripts/draw_kit.gd      Clase "DrawKit": utilidades de dibujo del estilo (degradados, contornos, brillos, sombras, grano)
 scripts/powers.gd        Clase "Powers": las mejoras y su icono
 scripts/themes.gd        Clase "Themes": colores y música de cada tipo de nivel
 scenes/player/           Pip (movimiento, salto, mejoras, daño)
@@ -64,7 +65,7 @@ scenes/levels/           level.gd (construye niveles), suelo, plataformas, lava,
 scenes/ui/               Marcador (HUD), menú principal, selector de niveles, pausa y opciones
 ```
 
-Los gráficos se dibujan por código (`_draw()`), así que no hacen falta imágenes. Si añadís sprites, sustituid el `_draw()` de cada escena.
+Los gráficos se dibujan por código (`_draw()`), así que no hacen falta imágenes. El estilo visual es **cartoon pulido**: contorno oscuro grueso, relleno con degradado vertical, brillos blancos y sombra de contacto en el suelo. Para dibujar algo nuevo con el mismo estilo, usad las funciones de [draw_kit.gd](scripts/draw_kit.gd) (`DrawKit.shape`, `DrawKit.shine`, `DrawKit.contact_shadow`...). Si añadís sprites, sustituid el `_draw()` de cada escena.
 
 ### Cómo editar o crear un nivel
 

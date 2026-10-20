@@ -78,19 +78,23 @@ func _draw_far(rng: RandomNumberGenerator, style: String) -> void:
 			while x < width: # estalactitas y columnas
 				var w := rng.randf_range(30, 70)
 				var h := rng.randf_range(80, 200)
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(x, -200), Vector2(x + w, -200), Vector2(x + w / 2.0, -200 + h + 200),
-				]), far)
-				if rng.randf() < 0.4:
+				DrawKit.gradient_fill(self, PackedVector2Array([
+					Vector2(x, -200), Vector2(x + w, -200), Vector2(x + w / 2.0, h),
+				]), far.darkened(0.2), far.lightened(0.15))
+				if rng.randf() < 0.4: # columna de roca
 					var ch := rng.randf_range(120, 260)
-					draw_rect(Rect2(x + w, ground_y + 40 - ch, w * 0.8, ch), light)
+					var column := DrawKit.rounded_rect(Rect2(x + w, ground_y + 40 - ch, w * 0.8, ch + 20), w * 0.25, 0.0)
+					DrawKit.gradient_fill(self, column, light.lightened(0.08), light.darkened(0.25))
 				x += w + rng.randf_range(20, 80)
 		"cloud":
-			draw_circle(Vector2(width * 0.15 + 200, 70), 40.0, Color(1, 0.97, 0.8, 0.9)) # sol
-			draw_circle(Vector2(width * 0.15 + 200, 70), 52.0, Color(1, 0.95, 0.7, 0.25))
+			var sun := Vector2(width * 0.15 + 200, 70)
+			for k in 4: # halo del sol
+				draw_circle(sun, 40.0 + k * 14.0, Color(1, 0.95, 0.75, 0.12))
+			DrawKit.gradient_fill(self, DrawKit.circle(sun, 38.0, 40), Color(1, 1, 0.9), Color(1, 0.88, 0.6))
 			while x < width:
 				var r := rng.randf_range(40, 80)
-				draw_circle(Vector2(x, ground_y + rng.randf_range(-40, 20)), r, far)
+				var c := Vector2(x, ground_y + rng.randf_range(-40, 20))
+				DrawKit.gradient_fill(self, DrawKit.circle(c, r, 32), Color(1, 1, 1, far.a), Color(1, 0.9, 0.95, far.a * 0.6))
 				x += r * 1.2
 
 
@@ -124,28 +128,30 @@ func _draw_near(rng: RandomNumberGenerator, style: String) -> void:
 			while x < width:
 				var h := rng.randf_range(60, 180)
 				var w := rng.randf_range(40, 90)
-				draw_colored_polygon(PackedVector2Array([
+				var rock: Color = near if i % 2 == 0 else near_alt
+				DrawKit.gradient_fill(self, PackedVector2Array([
 					Vector2(x, ground_y + 40), Vector2(x + w * 0.3, ground_y - h), Vector2(x + w * 0.7, ground_y - h * 0.8),
 					Vector2(x + w, ground_y + 40),
-				]), near if i % 2 == 0 else near_alt)
+				]), rock.lightened(0.12), rock.darkened(0.2))
 				if rng.randf() < 0.7: # cristales que brillan
 					var glow := 0.6 + sin(anim_time * 2.0 + i) * 0.25
 					var cx := x + w * 0.5
 					var color: Color = theme.crystal if i % 2 == 0 else theme.crystal_alt
-					draw_circle(Vector2(cx, ground_y - 6), 22.0, Color(color, 0.12 * glow))
+					for k in 3: # halo
+						draw_circle(Vector2(cx, ground_y - 6), 14.0 + k * 8.0, Color(color, 0.05 * glow))
 					for k in 3:
 						var base := Vector2(cx + (k - 1) * 8.0, ground_y + 4)
 						var tall := rng.randf_range(14, 30)
-						draw_colored_polygon(PackedVector2Array([
-							base + Vector2(-4, 0), base + Vector2((k - 1) * 4.0, -tall), base + Vector2(4, 0),
-						]), Color(color, glow))
+						var crystal := PackedVector2Array([base + Vector2(-4, 0), base + Vector2((k - 1) * 4.0, -tall), base + Vector2(4, 0)])
+						DrawKit.gradient_fill(self, crystal, Color(color.lightened(0.5), glow), Color(color, glow * 0.7))
+						draw_line(base + Vector2(-1, -2), base + Vector2((k - 1) * 4.0 * 0.8, -tall * 0.8), Color(1, 1, 1, 0.5 * glow), 1.0)
 				x += w + rng.randf_range(30, 120)
 				i += 1
 		"cloud":
 			while x < width: # mar de nubes
 				var r := rng.randf_range(40, 70)
-				draw_circle(Vector2(x, ground_y + 70), r, near_alt)
-				draw_circle(Vector2(x + 20, ground_y + 60), r * 0.8, near)
+				DrawKit.gradient_fill(self, DrawKit.circle(Vector2(x, ground_y + 70), r, 32), near_alt, near_alt.darkened(0.08))
+				DrawKit.gradient_fill(self, DrawKit.circle(Vector2(x + 20, ground_y + 60), r * 0.8, 28), Color.WHITE, near)
 				x += r
 			draw_rect(Rect2(-100, ground_y + 80, width + 200, 2000), near)
 		"rock":
@@ -156,7 +162,11 @@ func _draw_near(rng: RandomNumberGenerator, style: String) -> void:
 				for k in 4:
 					pts.append(Vector2(x + w * (k + 0.5) / 4.0, ground_y - h * rng.randf_range(0.5, 1.0)))
 				pts.append(Vector2(x + w, ground_y + 40))
-				draw_colored_polygon(pts, near if i % 2 == 0 else near_alt)
+				var rock: Color = near if i % 2 == 0 else near_alt
+				DrawKit.gradient_fill(self, pts, rock.lightened(0.1), rock.darkened(0.15))
+				# Resplandor de lava en la base
+				draw_polygon(PackedVector2Array([Vector2(x, ground_y + 10), Vector2(x + w, ground_y + 10), Vector2(x + w, ground_y + 40), Vector2(x, ground_y + 40)]),
+					PackedColorArray([Color(theme.lava, 0.0), Color(theme.lava, 0.0), Color(theme.lava, 0.35), Color(theme.lava, 0.35)]))
 				x += w + rng.randf_range(10, 80)
 				i += 1
 

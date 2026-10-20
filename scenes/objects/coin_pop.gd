@@ -12,5 +12,7 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, 9.0, Color("ffd23f"))
-	draw_circle(Vector2.ZERO, 6.0, Color("ffe98a"))
+	draw_circle(Vector2.ZERO, 10.6, DrawKit.OUTLINE)
+	DrawKit.gradient_fill(self, DrawKit.circle(Vector2.ZERO, 9.4, 24), Color("fff1a8"), Color("c98a00"))
+	DrawKit.gradient_fill(self, DrawKit.circle(Vector2.ZERO, 6.6, 20), Color("dca21a"), Color("ffe066"))
+	draw_arc(Vector2.ZERO, 8.0, PI * 1.1, PI * 1.5, 8, Color(1, 1, 1, 0.75), 1.6, true)

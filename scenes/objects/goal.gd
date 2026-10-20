@@ -42,18 +42,14 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	var outline := Color("1e1428")
-	# Base
-	draw_rect(Rect2(-14, -14, 28, 14), outline)
-	draw_rect(Rect2(-13, -13, 26, 12), Color("8d7f74"))
-	draw_rect(Rect2(-13, -13, 26, 3), Color("b3a69b"))
-	# Mástil
-	draw_rect(Rect2(-3, -POLE_HEIGHT, 6, POLE_HEIGHT - 13), outline)
-	draw_rect(Rect2(-2, -POLE_HEIGHT, 4, POLE_HEIGHT - 13), Color("e6edf3"))
-	draw_rect(Rect2(-2, -POLE_HEIGHT, 1.5, POLE_HEIGHT - 13), Color.WHITE)
-	draw_circle(Vector2(0, -POLE_HEIGHT), 7.0, outline)
-	draw_circle(Vector2(0, -POLE_HEIGHT), 6.0, Color("ffd23f"))
-	draw_circle(Vector2(-2, -POLE_HEIGHT - 2), 2.0, Color("fff1a8"))
+	DrawKit.contact_shadow(self, Vector2.ZERO, 18.0, 0.25)
+	DrawKit.shape(self, DrawKit.rounded_rect(Rect2(-14, -14, 28, 14), 3.0), Color("c2b6ab"), Color("7a6d62"), 1.6)
+	draw_line(Vector2(-10, -12.5), Vector2(10, -12.5), Color(1, 1, 1, 0.4), 1.2)
+	DrawKit.shape(self, DrawKit.rounded_rect(Rect2(-2.5, -POLE_HEIGHT, 5, POLE_HEIGHT - 13), 2.0), Color.WHITE, Color("aab4bf"), 1.4)
+	var top := Vector2(0, -POLE_HEIGHT)
+	draw_circle(top, 10.0, Color(1, 0.9, 0.4, 0.2))
+	DrawKit.shape(self, DrawKit.circle(top, 6.0, 18), Color("fff1a8"), Color("e0a800"), 1.4)
+	DrawKit.shine(self, top + Vector2(-2, -2), Vector2(1.8, 1.2), 0.8)
 	# Bandera ondeando
 	var t := Time.get_ticks_msec() / 1000.0
 	var top_edge := PackedVector2Array()
@@ -64,11 +60,7 @@ func _draw() -> void:
 		top_edge.append(Vector2(x, flag_y + wave))
 		bottom_edge.append(Vector2(x, flag_y + 26.0 - i * 1.2 + wave))
 	bottom_edge.reverse()
-	var flag := top_edge + bottom_edge
-	var flag_outline := flag.duplicate()
-	flag_outline.append(flag[0])
-	draw_colored_polygon(flag, Color("2ec4b6"))
-	draw_polyline(flag_outline, outline, 1.5, true)
+	DrawKit.shape(self, top_edge + bottom_edge, Color("5fe0d3"), Color("1d9a8e"), 1.6)
 	# Estrella
 	var center := Vector2(19, flag_y + 12 + sin(t * 6.0 - 3.0) * 1.2)
 	var star := PackedVector2Array()
@@ -76,4 +68,4 @@ func _draw() -> void:
 		var r := 6.0 if i % 2 == 0 else 2.6
 		var a := -PI / 2.0 + i * PI / 5.0
 		star.append(center + Vector2(cos(a), sin(a)) * r)
-	draw_colored_polygon(star, Color.WHITE)
+	DrawKit.gradient_fill(self, star, Color.WHITE, Color("fff1a8"))

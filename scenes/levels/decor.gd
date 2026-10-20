@@ -73,15 +73,20 @@ func _draw() -> void:
 				var petal: Color = PETALS[salt % PETALS.size()]
 				for k in 5:
 					var a := k * TAU / 5.0 + anim_time * 0.5
-					draw_circle(head + Vector2(cos(a), sin(a)) * 2.2, 1.6, petal)
-				draw_circle(head, 1.2, Color("ff9f1c"))
+					var p := head + Vector2(cos(a), sin(a)) * 2.3
+					draw_circle(p, 1.9, petal.darkened(0.25))
+					draw_circle(p + Vector2(-0.3, -0.3), 1.5, petal)
+				DrawKit.gradient_fill(self, DrawKit.circle(head, 1.4, 10), Color("ffd23f"), Color("ff9f1c"))
 			"crystal":
 				var glow := 0.65 + sin(anim_time * 2.5 + pos.x * 0.1) * 0.35
 				var color: Color = theme.crystal if salt % 2 == 0 else theme.crystal_alt
-				draw_circle(pos + Vector2(0, -4), 10.0, Color(color, 0.18 * glow))
-				draw_colored_polygon(PackedVector2Array([pos + Vector2(-3.5, 0), pos + Vector2(0, -11), pos + Vector2(3.5, 0)]), Color(color, 0.6 + 0.4 * glow))
-				draw_colored_polygon(PackedVector2Array([pos + Vector2(2, 0), pos + Vector2(6, -6), pos + Vector2(7, 0)]), Color(color, 0.5 + 0.4 * glow))
-				draw_line(pos + Vector2(-1, -2), pos + Vector2(0, -9), Color(1, 1, 1, 0.6 * glow), 1.0)
+				for k in 3:
+					draw_circle(pos + Vector2(0, -4), 6.0 + k * 4.0, Color(color, 0.07 * glow))
+				var big := PackedVector2Array([pos + Vector2(-3.5, 0), pos + Vector2(0, -11), pos + Vector2(3.5, 0)])
+				DrawKit.shape(self, big, Color(color.lightened(0.6), 0.7 + 0.3 * glow), Color(color, 0.7 + 0.3 * glow), 1.0)
+				var small := PackedVector2Array([pos + Vector2(2, 0), pos + Vector2(6, -6), pos + Vector2(7.5, 0)])
+				DrawKit.shape(self, small, Color(color.lightened(0.5), 0.6 + 0.3 * glow), Color(color, 0.6 + 0.3 * glow), 1.0)
+				draw_line(pos + Vector2(-1, -2), pos + Vector2(0, -9), Color(1, 1, 1, 0.7 * glow), 1.0)
 			"crack":
 				var pulse := 0.5 + sin(anim_time * 1.8 + salt) * 0.5
 				var lava: Color = theme.lava

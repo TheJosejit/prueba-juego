@@ -149,6 +149,7 @@ func _spawn_moving_platform(cell: Vector2i, width_tiles: int, axis: Vector2) -> 
 	platform.axis = axis
 	platform.plank = theme.plank
 	platform.plank_dark = theme.plank_dark
+	platform.cloud = theme.style == "cloud"
 	add_child(platform)
 
 

@@ -53,6 +53,9 @@ func _on_grab_body_entered(body: Node2D) -> void:
 
 func _draw() -> void:
 	var center := Vector2(0, -14 + sin(anim_time * 5.0) * 1.5)
-	var glow := 0.25 + sin(anim_time * 6.0) * 0.1
-	draw_circle(center, 14.0, Color(1, 1, 0.8, glow))
+	var glow := 0.18 + sin(anim_time * 6.0) * 0.07
+	for k in 3:
+		draw_circle(center, 9.0 + k * 4.0, Color(1, 1, 0.8, glow * 0.6))
+	if is_on_floor():
+		DrawKit.contact_shadow(self, Vector2.ZERO, 9.0, 0.2)
 	Powers.draw_icon(self, kind, center, 1.0)

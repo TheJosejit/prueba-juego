@@ -37,15 +37,23 @@ func _on_body_entered(body: Node2D) -> void:
 
 
 func _draw() -> void:
-	var outline := Color("1e1428")
-	draw_rect(Rect2(-10, -6, 20, 6), outline)
-	draw_rect(Rect2(-9, -5, 18, 4), Color("8d7f74"))
-	draw_rect(Rect2(-2.5, -64, 5, 58), outline)
-	draw_rect(Rect2(-1.5, -63, 3, 57), Color("e6edf3"))
+	DrawKit.contact_shadow(self, Vector2.ZERO, 12.0, 0.22)
+	DrawKit.shape(self, DrawKit.rounded_rect(Rect2(-9, -6, 18, 6), 2.0), Color("b3a69b"), Color("6f6359"), 1.4)
+	DrawKit.shape(self, DrawKit.rounded_rect(Rect2(-1.8, -63, 3.6, 57), 1.5), Color.WHITE, Color("aab4bf"), 1.2)
 	var y := lerpf(-20.0, -60.0, flag_raise)
 	var color := Color("38d26b") if active else Color("9aa4ad")
-	var wave := sin(Time.get_ticks_msec() / 150.0) * 2.0 if active else 0.0
-	var flag := PackedVector2Array([Vector2(2, y), Vector2(22, y + 6 + wave), Vector2(2, y + 12)])
-	draw_colored_polygon(flag, color)
-	draw_polyline(PackedVector2Array([flag[0], flag[1], flag[2]]), outline, 1.5, true)
-	draw_circle(Vector2(0, -64), 3.5, Color("ffd23f") if active else Color("c9d1d9"))
+	var t := Time.get_ticks_msec() / 1000.0
+	var top_edge := PackedVector2Array()
+	var bottom_edge := PackedVector2Array()
+	for i in 6:
+		var x := 2.0 + i * 4.0
+		var wave := sin(t * 7.0 - i * 0.8) * 1.6 * (i / 5.0) if active else 0.0
+		top_edge.append(Vector2(x, y + i * 1.2 + wave))
+		bottom_edge.append(Vector2(x, y + 13.0 - i * 1.2 + wave))
+	bottom_edge.reverse()
+	DrawKit.shape(self, top_edge + bottom_edge, color.lightened(0.25), color.darkened(0.15), 1.4)
+	var ball := Vector2(0, -64)
+	DrawKit.shape(self, DrawKit.circle(ball, 3.6, 14), Color("fff1a8") if active else Color.WHITE,
+		Color("e0a800") if active else Color("aab4bf"), 1.2)
+	if active:
+		draw_circle(ball, 7.0, Color(1, 0.95, 0.6, 0.2 + 0.1 * sin(t * 5.0)))

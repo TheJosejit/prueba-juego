@@ -12,6 +12,7 @@ var distance := 96.0 # cuánto se aleja de su posición inicial
 var period := 4.0 # segundos que tarda en ir y volver
 var plank := Color("c98a4b")
 var plank_dark := Color("7d5229")
+var cloud := false # en el tema del cielo la plataforma es una nube
 var origin := Vector2.ZERO
 var time := 0.0
 
@@ -35,23 +36,15 @@ func _physics_process(delta: float) -> void:
 
 func _draw() -> void:
 	var w := width_tiles * TILE
-	var outline := Color("1e1428")
-	draw_rect(Rect2(0, 0, w, THICKNESS), outline)
-	draw_rect(Rect2(1.5, 1.5, w - 3, THICKNESS - 3), plank)
-	draw_rect(Rect2(1.5, THICKNESS - 4.5, w - 3, 3), plank_dark)
-	draw_rect(Rect2(1.5, 1.5, w - 3, 2), plank.lightened(0.25))
-	for i in width_tiles:
-		draw_circle(Vector2(i * TILE + 16, THICKNESS / 2.0), 1.8, plank_dark)
+	DrawKit.plank(self, Rect2(0, 0, w, THICKNESS), plank, plank_dark, cloud)
 	# Flechas que indican la dirección
-	var arrow := Color(1, 1, 1, 0.6)
+	var arrow := Color(1, 1, 1, 0.75) if not cloud else Color(plank_dark, 0.9)
 	var c := Vector2(w / 2.0, THICKNESS / 2.0)
-	if axis.x != 0.0:
-		draw_line(c + Vector2(-10, 0), c + Vector2(-6, -3), arrow, 1.5)
-		draw_line(c + Vector2(-10, 0), c + Vector2(-6, 3), arrow, 1.5)
-		draw_line(c + Vector2(10, 0), c + Vector2(6, -3), arrow, 1.5)
-		draw_line(c + Vector2(10, 0), c + Vector2(6, 3), arrow, 1.5)
-	else:
-		draw_line(c + Vector2(-3, -2), c + Vector2(0, -5), arrow, 1.5)
-		draw_line(c + Vector2(3, -2), c + Vector2(0, -5), arrow, 1.5)
-		draw_line(c + Vector2(-3, 2), c + Vector2(0, 5), arrow, 1.5)
-		draw_line(c + Vector2(3, 2), c + Vector2(0, 5), arrow, 1.5)
+	var tips: Array = [[Vector2(-10, 0), Vector2(1, 0)], [Vector2(10, 0), Vector2(-1, 0)]]
+	if axis.x == 0.0:
+		tips = [[Vector2(0, -4), Vector2(0, 1)], [Vector2(0, 4), Vector2(0, -1)]]
+	for tip in tips:
+		var point: Vector2 = c + tip[0]
+		var back: Vector2 = tip[1] * 4.0
+		var side := Vector2(-back.y, back.x) * 0.8
+		draw_colored_polygon(PackedVector2Array([point, point + back + side, point + back - side]), arrow)

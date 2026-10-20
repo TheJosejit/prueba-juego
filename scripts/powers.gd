@@ -24,26 +24,28 @@ static func draw_icon(ci: CanvasItem, kind: Kind, c: Vector2, s := 1.0) -> void:
 	match kind:
 		Kind.HELMET:
 			draw_dome(ci, c + Vector2(0, 4) * s, 10.0 * s, HELMET_COLOR)
-			ci.draw_rect(Rect2(c + Vector2(-12, 3) * s, Vector2(24, 4) * s), OUTLINE)
-			ci.draw_rect(Rect2(c + Vector2(-11, 3.5) * s, Vector2(22, 2.5) * s), HELMET_COLOR.darkened(0.25))
-			ci.draw_circle(c + Vector2(0, -1) * s, 3.2 * s, OUTLINE)
-			ci.draw_circle(c + Vector2(0, -1) * s, 2.4 * s, Color("fff6c2"))
+			var brim := DrawKit.rounded_rect(Rect2(c + Vector2(-12, 3) * s, Vector2(24, 4) * s), 1.5 * s)
+			DrawKit.shape(ci, brim, HELMET_COLOR, HELMET_COLOR.darkened(0.3), 1.2 * s)
+			DrawKit.shape(ci, DrawKit.circle(c + Vector2(0, -1) * s, 2.6 * s, 12), Color("fffbe0"), Color("ffe27a"), 1.0 * s)
 		Kind.FEATHER:
 			var pts := PackedVector2Array()
-			for i in 17:
-				var a := i / 16.0 * TAU
+			for i in 20:
+				var a := i / 20.0 * TAU
 				pts.append(c + (Vector2(cos(a) * 4.5, sin(a) * 11.0)).rotated(0.6) * s)
-			ci.draw_colored_polygon(pts, Color.WHITE)
-			pts.append(pts[0])
-			ci.draw_polyline(pts, OUTLINE, 1.5 * s, true)
-			ci.draw_line(c + Vector2(-7, 9) * s, c + Vector2(5, -8) * s, Color("9ab7d8"), 1.5 * s, true)
+			DrawKit.shape(ci, pts, Color.WHITE, Color("cfe3f7"), 1.4 * s)
+			ci.draw_line(c + Vector2(-7, 9) * s, c + Vector2(5, -8) * s, Color("8fb0d6"), 1.5 * s, true)
+			for k in 4: # barbas de la pluma
+				var along := c + Vector2(-4.0 + k * 3.0, 4.5 - k * 4.2) * s
+				ci.draw_line(along, along + Vector2(3.0, 1.0) * s, Color("a9c6e6"), 0.8 * s, true)
 		Kind.MAGNET:
-			ci.draw_arc(c + Vector2(0, 0) * s, 7.0 * s, 0.0, PI, 16, OUTLINE, 7.5 * s, true)
-			ci.draw_arc(c + Vector2(0, 0) * s, 7.0 * s, 0.0, PI, 16, MAGNET_COLOR, 5.0 * s, true)
+			ci.draw_arc(c, 7.0 * s, 0.0, PI, 16, OUTLINE, 7.5 * s, true)
+			ci.draw_arc(c, 7.0 * s, 0.0, PI, 16, MAGNET_COLOR, 5.0 * s, true)
+			ci.draw_arc(c, 7.0 * s, 0.3, PI - 0.3, 12, Color(1, 1, 1, 0.35), 1.5 * s, true)
 			for side in [-1.0, 1.0]:
-				ci.draw_rect(Rect2(c + Vector2(side * 7.0 - 3.5, -8) * s, Vector2(7, 8.5) * s), OUTLINE)
-				ci.draw_rect(Rect2(c + Vector2(side * 7.0 - 2.5, -4) * s, Vector2(5, 4.5) * s), MAGNET_COLOR)
-				ci.draw_rect(Rect2(c + Vector2(side * 7.0 - 2.5, -7) * s, Vector2(5, 3) * s), Color("dfe6ee"))
+				var leg := DrawKit.rounded_rect(Rect2(c + Vector2(side * 7.0 - 2.5, -7.5) * s, Vector2(5, 8) * s), 1.0 * s)
+				DrawKit.shape(ci, leg, MAGNET_COLOR.lightened(0.15), MAGNET_COLOR.darkened(0.15), 1.2 * s)
+				var tip := DrawKit.rounded_rect(Rect2(c + Vector2(side * 7.0 - 2.5, -7.5) * s, Vector2(5, 3) * s), 1.0 * s)
+				DrawKit.gradient_fill(ci, tip, Color.WHITE, Color("b8c3cf"))
 
 
 ## Cúpula del casco: degradado, contorno y brillos.

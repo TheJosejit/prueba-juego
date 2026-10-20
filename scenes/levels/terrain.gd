@@ -73,15 +73,19 @@ func _draw() -> void:
 		DrawKit.gradient_fill(self, PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end,
 			Vector2(rect.position.x, rect.end.y)]), fill, _fill_color(d + 1.0))
 		match style:
-			"stone":
-				var mortar: Color = fill.darkened(0.3)
-				draw_line(pos + Vector2(0, 16), pos + Vector2(TILE, 16), mortar, 2.0)
-				var off := 8.0 if cell.y % 2 == 0 else 24.0
-				draw_line(pos + Vector2(off, 0), pos + Vector2(off, 16), mortar, 2.0)
-				draw_line(pos + Vector2(fmod(off + 16.0, 32.0), 16), pos + Vector2(fmod(off + 16.0, 32.0), 32), mortar, 2.0)
-				draw_line(pos + Vector2(2, 2), pos + Vector2(12, 2), fill.lightened(0.15), 1.5)
-			"cloud":
-				draw_circle(pos + Vector2(8 + h % 16, 12 + h % 11), 6.0, fill.lightened(0.4))
+			"stone": # sillares de piedra con relieve
+				draw_rect(rect, fill.darkened(0.4))
+				for row in 2:
+					var y := pos.y + row * 16.0
+					var xs := [0.0, 16.0, 32.0] if (cell.y + row) % 2 == 0 else [0.0, 8.0, 24.0, 32.0]
+					for k in xs.size() - 1:
+						var stone_rect := Rect2(pos.x + xs[k] + 0.8, y + 0.8, xs[k + 1] - xs[k] - 1.6, 14.4)
+						DrawKit.gradient_fill(self, DrawKit.rounded_rect(stone_rect, 2.5), fill.lightened(0.1), fill.darkened(0.12))
+						draw_line(stone_rect.position + Vector2(2, 1), Vector2(stone_rect.end.x - 2, stone_rect.position.y + 1), Color(1, 1, 1, 0.15), 1.0)
+			"cloud": # bultos esponjosos
+				var puff := pos + Vector2(8 + h % 16, 13 + h % 11)
+				DrawKit.gradient_fill(self, DrawKit.circle(puff, 7.0, 16), fill.lightened(0.6), fill)
+				DrawKit.gradient_fill(self, DrawKit.circle(puff + Vector2(9, 4), 4.5, 14), fill.lightened(0.5), fill)
 			_:
 				if h % 3 == 0: # piedrecita con brillo
 					var stone := pos + Vector2(6 + h % 18, 15 + h % 11)
@@ -137,19 +141,34 @@ func _draw_top(pos: Vector2, cell: Vector2i, style: String) -> void:
 				if not _is_top(cell + Vector2i(side, 0)):
 					var cap := pos + Vector2(0.0 if side < 0 else float(TILE), 5.0)
 					DrawKit.shape(self, DrawKit.circle(cap, 5.5, 14), top.lightened(0.15), top_dark, 1.2)
-		"stone":
-			draw_rect(Rect2(pos, Vector2(TILE, 6)), top)
-			draw_rect(Rect2(pos + Vector2(0, 6), Vector2(TILE, 2)), top_dark)
-			draw_rect(Rect2(pos, Vector2(TILE, 1.5)), top.lightened(0.3))
+		"stone", "rock":
+			# Borde superior irregular (piedra desgastada o roca volcánica)
+			var edge := PackedVector2Array()
+			for i in 9:
+				var x := i * 4.0
+				var bump := float(_hash(Vector2i(int(pos.x + x), cell.y)) % 3)
+				edge.append(pos + Vector2(x, 6.0 + bump * (0.8 if style == "stone" else 1.3)))
+			var shadow := edge.duplicate()
+			for i in shadow.size():
+				shadow[i].y += 2.0
+			draw_polyline(shadow, Color(0, 0, 0, 0.25), 2.5, true)
+			var lip := PackedVector2Array([pos, pos + Vector2(TILE, 0)])
+			var reversed := edge.duplicate()
+			reversed.reverse()
+			lip.append_array(reversed)
+			DrawKit.gradient_fill(self, lip, top.lightened(0.15), top_dark)
+			draw_line(pos + Vector2(0, 0.6), pos + Vector2(TILE, 0.6), Color(1, 1, 1, 0.3), 1.2)
+			if style == "rock": # brillo rojizo de la lava cercana
+				draw_line(pos + Vector2(0, 0.6), pos + Vector2(TILE, 0.6), Color(theme.lava_light, 0.25), 1.0)
 		"cloud":
 			for i in 3:
-				draw_circle(pos + Vector2(5 + i * 11, 4), 8.0, top)
-			draw_rect(Rect2(pos + Vector2(0, 4), Vector2(TILE, 6)), top)
-			draw_rect(Rect2(pos + Vector2(0, 10), Vector2(TILE, 2)), top_dark)
-		"rock":
-			draw_rect(Rect2(pos, Vector2(TILE, 6)), top)
-			draw_rect(Rect2(pos + Vector2(0, 6), Vector2(TILE, 2)), top_dark)
-			draw_rect(Rect2(pos, Vector2(TILE, 1.5)), top.lightened(0.2))
+				draw_circle(pos + Vector2(5 + i * 11, 6.5), 8.0, top_dark)
+			for i in 3:
+				var c := pos + Vector2(5 + i * 11, 4)
+				DrawKit.gradient_fill(self, DrawKit.circle(c, 8.0, 18), Color.WHITE, top.lerp(top_dark, 0.5))
+			DrawKit.gradient_fill(self, PackedVector2Array([pos + Vector2(0, 4), pos + Vector2(TILE, 4), pos + Vector2(TILE, 11), pos + Vector2(0, 11)]),
+				top.lerp(top_dark, 0.4), top_dark)
+			draw_circle(pos + Vector2(8, 0), 2.0, Color(1, 1, 1, 0.9))
 
 
 func _hash(cell: Vector2i) -> int:

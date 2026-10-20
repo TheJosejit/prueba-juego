@@ -50,26 +50,10 @@ func _add_run(x0: int, x1: int, y: int) -> void:
 func _draw() -> void:
 	var plank: Color = theme.get("plank", Color("c98a4b"))
 	var plank_dark: Color = theme.get("plank_dark", Color("7d5229"))
-	var outline := Color("1e1428")
 	var cloud: bool = theme.get("style", "") == "cloud"
 	for rect in runs:
-		if cloud:
-			var n := int(rect.size.x / 12.0)
-			for i in n + 1:
-				var c := rect.position + Vector2(i * rect.size.x / n, 6)
-				draw_circle(c, 8.0, plank_dark)
-			for i in n + 1:
-				var c := rect.position + Vector2(i * rect.size.x / n, 4)
-				draw_circle(c, 7.0, plank)
-			continue
-		draw_rect(rect, outline)
-		draw_rect(rect.grow(-1.5), plank)
-		draw_rect(Rect2(rect.position + Vector2(1.5, rect.size.y - 4.5), Vector2(rect.size.x - 3, 3)), plank_dark)
-		draw_rect(Rect2(rect.position + Vector2(1.5, 1.5), Vector2(rect.size.x - 3, 2)), plank.lightened(0.25))
-		var x := rect.position.x + TILE
-		while x < rect.end.x:
-			draw_line(Vector2(x, rect.position.y + 2), Vector2(x, rect.end.y - 2), plank_dark, 1.5)
-			x += TILE
-		# Soportes
-		for sx in [rect.position.x + 6, rect.end.x - 10]:
-			draw_rect(Rect2(sx, rect.end.y, 4, 8), plank_dark)
+		if not cloud: # soportes bajo la tabla
+			for sx in [rect.position.x + 5.0, rect.end.x - 10.0]:
+				var support := DrawKit.rounded_rect(Rect2(sx, rect.end.y - 2.0, 5, 10), 1.5)
+				DrawKit.shape(self, support, plank_dark.lightened(0.1), plank_dark.darkened(0.2), 1.2)
+		DrawKit.plank(self, rect, plank, plank_dark, cloud)
