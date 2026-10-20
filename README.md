@@ -4,7 +4,7 @@ Proyecto de Godot **4.7** (Forward Plus, Jolt Physics). Todo el equipo debe usar
 
 ## El juego
 
-Plataformas 2D: lleva a **Pip** a través de cuatro mundos hasta la bandera de meta de cada uno.
+Plataformas 2D: lleva a **Pip**, un pequeño robot con botas cohete, a través de cuatro mundos hasta la bandera de meta de cada uno.
 
 | Nivel | Tema | Novedades |
 |-------|------|-----------|
@@ -58,7 +58,7 @@ scripts/fx.gd            Clase "Fx": partículas, escombros y textos flotantes
 scripts/draw_kit.gd      Clase "DrawKit": utilidades de dibujo del estilo (degradados, contornos, brillos, sombras, grano)
 scripts/powers.gd        Clase "Powers": las mejoras y su icono
 scripts/themes.gd        Clase "Themes": colores y música de cada tipo de nivel
-scenes/player/           Pip (movimiento, salto, mejoras, daño)
+scenes/player/           Pip, el robot (movimiento, salto, mejoras, daño y su dibujo con ojos LED)
 scenes/enemies/          enemy.gd (base común), Blob, Erizo y Murciélago
 scenes/objects/          Bloques, mejora, monedas, pinchos, muelle, punto de control, plataforma móvil y meta
 scenes/levels/           level.gd (construye niveles), suelo, plataformas, lava, fondo y los niveles 1-4
