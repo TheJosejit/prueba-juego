@@ -25,6 +25,7 @@ func get_map() -> PackedStringArray:
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(SKY_COLOR)
+	Sfx.play_music()
 	var map := get_map()
 	var map_size := Vector2i(0, map.size())
 	for row in map:

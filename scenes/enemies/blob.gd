@@ -43,6 +43,9 @@ func stomp() -> void:
 	dead = true
 	$CollisionShape2D.set_deferred("disabled", true)
 	Game.add_score(200)
+	Sfx.play("stomp", 0.1)
+	Fx.burst(self, global_position + Vector2(0, -8), COLOR, 12, 140.0)
+	Fx.popup(self, global_position + Vector2(0, -28), "+200")
 	await get_tree().create_timer(0.5).timeout
 	queue_free()
 

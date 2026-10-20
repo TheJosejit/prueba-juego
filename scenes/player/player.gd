@@ -28,6 +28,8 @@ var jump_buffer := 0.0
 var squash := Vector2.ONE
 var anim_time := 0.0
 var death_camera_pos := Vector2.ZERO
+var shake := 0.0
+var run_dust_timer := 0.0
 
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var camera: Camera2D = $Camera2D
@@ -75,6 +77,8 @@ func _physics_process(delta: float) -> void:
 		jump_buffer = 0.0
 		coyote = 0.0
 		squash = Vector2(0.75, 1.25)
+		Sfx.play("jump", 0.05)
+		Fx.dust(self, global_position)
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT
 
@@ -82,6 +86,12 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if is_on_floor() and not was_on_floor:
 		squash = Vector2(1.25, 0.8)
+		Fx.dust(self, global_position, 8)
+
+	run_dust_timer -= delta
+	if is_on_floor() and absf(velocity.x) > WALK_SPEED + 40.0 and run_dust_timer <= 0.0:
+		run_dust_timer = 0.15
+		Fx.dust(self, global_position + Vector2(-facing * 8.0, 0), 2)
 
 	# Golpear bloques con la cabeza.
 	for i in get_slide_collision_count():
@@ -98,6 +108,8 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	anim_time += delta
 	squash = squash.lerp(Vector2.ONE, minf(delta * 12.0, 1.0))
+	shake = move_toward(shake, 0.0, delta * 20.0)
+	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake
 	queue_redraw()
 
 
@@ -109,6 +121,7 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 		body.stomp()
 		velocity.y = JUMP_VELOCITY if Input.is_action_pressed("jump") else STOMP_BOUNCE
 		squash = Vector2(1.2, 0.85)
+		shake = 3.0
 	else:
 		die()
 
@@ -119,6 +132,10 @@ func die() -> void:
 	dead = true
 	death_camera_pos = camera.global_position
 	velocity = Vector2(0.0, -450.0)
+	shake = 8.0
+	Sfx.stop_music()
+	Sfx.play("die")
+	Fx.burst(self, global_position + Vector2(0, -14), BODY_COLOR, 14, 160.0)
 	$CollisionShape2D.set_deferred("disabled", true)
 	hurtbox.set_deferred("monitoring", false)
 	await get_tree().create_timer(1.2).timeout
