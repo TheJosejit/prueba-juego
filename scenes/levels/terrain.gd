@@ -1,13 +1,12 @@
 extends StaticBody2D
-## Suelo del nivel (las casillas "#" del mapa): colisiones y dibujo.
+## Suelo del nivel (las casillas "#" del mapa): colisiones y dibujo según el tema del nivel.
+## Estilos: "grass" (hierba), "stone" (piedra), "cloud" (nube) y "rock" (roca volcánica).
 
 const TILE := 32
-const GRASS := Color("5cc85c")
-const GRASS_DARK := Color("3c9a48")
-const DIRT := Color("b5734a")
-const DIRT_DARK := Color("8f5536")
 
+var theme := {}
 var cells := {}
+var depth := {} # cuántas casillas de suelo hay encima de cada una (para oscurecer lo profundo)
 
 
 func add_cell(cell: Vector2i) -> void:
@@ -21,6 +20,10 @@ func build() -> void:
 		if not by_row.has(cell.y):
 			by_row[cell.y] = []
 		by_row[cell.y].append(cell.x)
+		var d := 0
+		while d < 4 and cells.has(cell - Vector2i(0, d + 1)):
+			d += 1
+		depth[cell] = d
 	for y: int in by_row:
 		var xs: Array = by_row[y]
 		xs.sort()
@@ -47,13 +50,78 @@ func _add_shape(x0: int, x1: int, y: int) -> void:
 
 
 func _draw() -> void:
+	var style: String = theme.get("style", "grass")
 	for cell: Vector2i in cells:
 		var pos := Vector2(cell) * TILE
-		draw_rect(Rect2(pos, Vector2(TILE, TILE)), DIRT)
-		if (cell.x + cell.y) % 2 == 0:
-			draw_rect(Rect2(pos + Vector2(6, 18), Vector2(6, 4)), DIRT_DARK)
-		else:
-			draw_rect(Rect2(pos + Vector2(20, 8), Vector2(5, 4)), DIRT_DARK)
+		var d: int = depth.get(cell, 0)
+		var fill: Color = theme.fill if d < 2 else (theme.fill_dark if d < 4 else theme.fill_deep)
+		var h := _hash(cell)
+		draw_rect(Rect2(pos, Vector2(TILE, TILE)), fill)
+		match style:
+			"stone":
+				var mortar: Color = fill.darkened(0.3)
+				draw_line(pos + Vector2(0, 16), pos + Vector2(TILE, 16), mortar, 2.0)
+				var off := 8.0 if cell.y % 2 == 0 else 24.0
+				draw_line(pos + Vector2(off, 0), pos + Vector2(off, 16), mortar, 2.0)
+				draw_line(pos + Vector2(fmod(off + 16.0, 32.0), 16), pos + Vector2(fmod(off + 16.0, 32.0), 32), mortar, 2.0)
+				draw_rect(Rect2(pos + Vector2(2, 2), Vector2(10, 2)), fill.lightened(0.12))
+			"cloud":
+				draw_circle(pos + Vector2(8 + h % 16, 12 + h % 11), 6.0, fill.lightened(0.4))
+			_:
+				# Motas en la tierra o la roca
+				draw_rect(Rect2(pos + Vector2(4 + h % 20, 14 + h % 13), Vector2(5, 3)), fill.darkened(0.2))
+				draw_rect(Rect2(pos + Vector2(4 + (h >> 4) % 20, 4 + (h >> 3) % 10), Vector2(3, 3)), fill.lightened(0.12))
+				if style == "rock" and h % 5 == 0:
+					var glow: Color = theme.lava
+					draw_polyline(PackedVector2Array([
+						pos + Vector2(6, 26), pos + Vector2(12, 20), pos + Vector2(18, 23), pos + Vector2(25, 16),
+					]), Color(glow, 0.8), 1.5, true)
+		# Laterales y parte inferior expuestos: más oscuros, para que los bloques se lean bien
+		if not cells.has(cell + Vector2i.LEFT):
+			draw_rect(Rect2(pos, Vector2(3, TILE)), fill.darkened(0.3))
+		if not cells.has(cell + Vector2i.RIGHT):
+			draw_rect(Rect2(pos + Vector2(TILE - 3, 0), Vector2(3, TILE)), fill.darkened(0.3))
+		if not cells.has(cell + Vector2i.DOWN):
+			draw_rect(Rect2(pos + Vector2(0, TILE - 4), Vector2(TILE, 4)), fill.darkened(0.35))
 		if not cells.has(cell + Vector2i.UP):
-			draw_rect(Rect2(pos, Vector2(TILE, 10)), GRASS)
-			draw_rect(Rect2(pos + Vector2(0, 10), Vector2(TILE, 3)), GRASS_DARK)
+			_draw_top(pos, h, style)
+
+
+func _draw_top(pos: Vector2, h: int, style: String) -> void:
+	var top: Color = theme.top
+	var top_dark: Color = theme.top_dark
+	match style:
+		"grass":
+			draw_rect(Rect2(pos, Vector2(TILE, 10)), top)
+			draw_rect(Rect2(pos + Vector2(0, 10), Vector2(TILE, 3)), top_dark)
+			draw_rect(Rect2(pos, Vector2(TILE, 2)), top.lightened(0.25))
+			for i in 4: # briznas de hierba
+				var x := pos.x + 3.0 + i * 8.0 + (h >> i) % 3
+				draw_colored_polygon(PackedVector2Array([
+					Vector2(x - 2, pos.y + 1), Vector2(x, pos.y - 4 - (h >> (i + 2)) % 3), Vector2(x + 2, pos.y + 1),
+				]), top)
+			if h % 7 == 0: # alguna flor
+				var flower := pos + Vector2(10 + h % 12, -3)
+				var petal: Color = [Color("ffffff"), Color("ffd23f"), Color("ff7eb6")][h % 3]
+				draw_circle(flower, 2.5, petal)
+				draw_circle(flower, 1.0, Color("ff9f1c"))
+		"stone":
+			draw_rect(Rect2(pos, Vector2(TILE, 6)), top)
+			draw_rect(Rect2(pos + Vector2(0, 6), Vector2(TILE, 2)), top_dark)
+			draw_rect(Rect2(pos, Vector2(TILE, 1.5)), top.lightened(0.3))
+			if h % 6 == 0 and theme.has("crystal"): # cristal brillante
+				var c := pos + Vector2(8 + h % 16, 0)
+				draw_colored_polygon(PackedVector2Array([c + Vector2(-3, 0), c + Vector2(0, -9), c + Vector2(3, 0)]), theme.crystal)
+		"cloud":
+			for i in 3:
+				draw_circle(pos + Vector2(5 + i * 11, 4), 8.0, top)
+			draw_rect(Rect2(pos + Vector2(0, 4), Vector2(TILE, 6)), top)
+			draw_rect(Rect2(pos + Vector2(0, 10), Vector2(TILE, 2)), top_dark)
+		"rock":
+			draw_rect(Rect2(pos, Vector2(TILE, 6)), top)
+			draw_rect(Rect2(pos + Vector2(0, 6), Vector2(TILE, 2)), top_dark)
+			draw_rect(Rect2(pos, Vector2(TILE, 1.5)), top.lightened(0.2))
+
+
+func _hash(cell: Vector2i) -> int:
+	return absi((cell.x * 73856093) ^ (cell.y * 19349663)) % 65536

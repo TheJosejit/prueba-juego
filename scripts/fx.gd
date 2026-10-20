@@ -18,6 +18,24 @@ static func burst(from: Node, pos: Vector2, color: Color, amount := 10, speed :=
 	_emit(from, p, pos)
 
 
+## Trozos grandes que salen volando y giran (ladrillos rotos).
+static func debris(from: Node, pos: Vector2, color: Color, amount := 8) -> void:
+	var p := CPUParticles2D.new()
+	p.amount = amount
+	p.lifetime = 0.9
+	p.direction = Vector2.UP
+	p.spread = 70.0
+	p.initial_velocity_min = 150.0
+	p.initial_velocity_max = 280.0
+	p.gravity = Vector2(0, 1100)
+	p.angular_velocity_min = -720.0
+	p.angular_velocity_max = 720.0
+	p.scale_amount_min = 5.0
+	p.scale_amount_max = 8.0
+	p.color = color
+	_emit(from, p, pos)
+
+
 ## Polvo a los pies (saltar, aterrizar, correr).
 static func dust(from: Node, pos: Vector2, amount := 6) -> void:
 	var p := CPUParticles2D.new()

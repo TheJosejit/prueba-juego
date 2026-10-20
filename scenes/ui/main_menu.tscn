@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_menu.gd" id="1_menu"]
 [ext_resource type="Theme" path="res://scenes/ui/menu_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://scenes/levels/scenery.gd" id="3_scenery"]
 [ext_resource type="PackedScene" path="res://scenes/ui/options_menu.tscn" id="4_options"]
+[ext_resource type="PackedScene" path="res://scenes/ui/level_select.tscn" id="5_levels"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -23,6 +24,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.56, 0.83, 1, 1)
+
+[node name="FarScenery" type="Node2D" parent="."]
+script = ExtResource("3_scenery")
 
 [node name="Scenery" type="Node2D" parent="."]
 script = ExtResource("3_scenery")
@@ -86,6 +90,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Nueva partida"
 
+[node name="LevelsButton" type="Button" parent="Center/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Elegir nivel"
+
 [node name="OptionsButton" type="Button" parent="Center/Buttons"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -114,4 +123,7 @@ text = "Esc: pausa  ·  M: silenciar"
 horizontal_alignment = 1
 
 [node name="OptionsMenu" parent="." instance=ExtResource("4_options")]
+layout_mode = 1
+
+[node name="LevelSelect" parent="." instance=ExtResource("5_levels")]
 layout_mode = 1

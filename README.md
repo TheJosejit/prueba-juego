@@ -4,61 +4,111 @@ Proyecto de Godot **4.7** (Forward Plus, Jolt Physics). Todo el equipo debe usar
 
 ## El juego
 
-Plataformas 2D: lleva a **Pip** hasta la bandera de meta. Recoge monedas (50 = vida extra), pisa a los **Blobs** y evita los pinchos y los huecos. Los bloques morados sueltan una moneda si los golpeas desde abajo.
+Plataformas 2D: lleva a **Pip** a través de cuatro mundos hasta la bandera de meta de cada uno.
+
+| Nivel | Tema | Novedades |
+|-------|------|-----------|
+| 1 · Pradera Soleada | Hierba | Casco, muelles, punto de control, caja secreta de ladrillos |
+| 2 · Cueva de Cristal | Piedra | Erizos, murciélagos, túnel de techo bajo, plataformas que suben y bajan |
+| 3 · Islas del Cielo | Nubes | Sin suelo continuo: plataformas móviles, muelles y la pluma |
+| 4 · Volcán Rugiente | Roca y lava | Lava, plataformas sobre la lava, muchos erizos |
+
+Recoge monedas (50 = vida extra), pisa a los enemigos y llega a la meta. Al completar un nivel se desbloquea el siguiente en **Elegir nivel**.
+
+### Controles
 
 | Acción | Teclado | Mando |
 |--------|---------|-------|
 | Moverse | A / D o ← / → | Cruceta o stick |
 | Saltar (mantener = más alto) | Espacio, W o ↑ | A |
 | Correr | Shift o J | X |
-| Pausa (guardar partida, opciones) | Esc o P | Start |
+| Pausa (guardar, reiniciar, opciones) | Esc o P | Start |
 | Silenciar / activar sonido | M | |
 
-**Guardar partida:** desde el menú de pausa se guardan el nivel, los puntos, las monedas y las vidas; también se guarda solo al pasar de nivel. Al continuar se empieza desde el principio del nivel guardado. Las opciones (volumen de música y efectos, pantalla completa, temblor de cámara) se guardan solas. Ambos archivos están en la carpeta de datos de Godot (`%APPDATA%\Godot\app_userdata\PruebaJuego` en Windows).
+### Mejoras (poderes)
+
+Salen de los bloques sorpresa con un icono especial. **Cualquier mejora te protege de un golpe**: si te tocan, la pierdes y parpadeas un momento en vez de morir. La lava y las caídas matan siempre.
+
+| Mejora | Qué hace |
+|--------|----------|
+| 🪖 **Casco** | Rompe los ladrillos al golpearlos desde abajo |
+| 🪶 **Pluma** | Doble salto, y planear manteniendo el salto mientras caes |
+| 🧲 **Imán** | Atrae las monedas cercanas |
+
+### Enemigos
+
+| Enemigo | Cómo vencerlo |
+|---------|---------------|
+| **Blob** (morado) | Pisándolo |
+| **Murciélago** | Pisándolo (vuela y atraviesa paredes) |
+| **Erizo** | ¡No se puede pisar! Golpea desde abajo el bloque en el que esté |
+
+Golpear un bloque desde abajo lanza por los aires a cualquier enemigo que esté encima.
+
+**Guardar partida:** desde el menú de pausa se guardan el nivel, los puntos, las monedas, las vidas y la mejora; también se guarda solo al pasar de nivel. Al continuar se empieza desde el principio del nivel guardado. Las opciones (volumen de música y efectos, pantalla completa, temblor de cámara) se guardan solas. Todo está en la carpeta de datos de Godot (`%APPDATA%\Godot\app_userdata\PruebaJuego` en Windows).
 
 ## Estructura
 
 ```
-scripts/game.gd          Autoload "Game": puntos, monedas, vidas, lista de niveles, guardado y controles
+scripts/game.gd          Autoload "Game": puntos, vidas, mejora, punto de control, lista de niveles, guardado y controles
 scripts/settings.gd      Autoload "Settings": opciones del jugador
 scripts/sfx.gd           Autoload "Sfx": sonidos y música (sintetizados por código)
-scripts/fx.gd            Clase "Fx": partículas y textos flotantes
-scenes/player/           Pip (movimiento, salto, muerte)
-scenes/enemies/          Blob
-scenes/objects/          Bloques, monedas, pinchos y bandera de meta
-scenes/levels/           Construcción de niveles, suelo, fondo y level_1
-scenes/ui/               Marcador (HUD), menú principal, menú de pausa y opciones
+scripts/fx.gd            Clase "Fx": partículas, escombros y textos flotantes
+scripts/powers.gd        Clase "Powers": las mejoras y su icono
+scripts/themes.gd        Clase "Themes": colores y música de cada tipo de nivel
+scenes/player/           Pip (movimiento, salto, mejoras, daño)
+scenes/enemies/          enemy.gd (base común), Blob, Erizo y Murciélago
+scenes/objects/          Bloques, mejora, monedas, pinchos, muelle, punto de control, plataforma móvil y meta
+scenes/levels/           level.gd (construye niveles), suelo, plataformas, lava, fondo y los niveles 1-4
+scenes/ui/               Marcador (HUD), menú principal, selector de niveles, pausa y opciones
 ```
 
 Los gráficos se dibujan por código (`_draw()`), así que no hacen falta imágenes. Si añadís sprites, sustituid el `_draw()` de cada escena.
 
-El sonido también se genera por código. Para lanzar un efecto: `Sfx.play("jump")` (disponibles: `jump`, `coin`, `stomp`, `bump`, `one_up`, `die`, `win`, `game_over`). La música está en `MELODY` y `BASS` dentro de [sfx.gd](scripts/sfx.gd), escrita como notas (`"C5:2"` = Do5 durante 2 corcheas). Para usar archivos `.wav`/`.ogg`, basta con guardarlos en el diccionario `sounds`.
+### Cómo editar o crear un nivel
 
-### Cómo editar un nivel
+Los niveles son mapas de texto. Abre por ejemplo [level_1.gd](scenes/levels/level_1.gd) y cambia los caracteres. Cada carácter es una casilla de 32×32:
 
-Los niveles son mapas de texto. Abre [level_1.gd](scenes/levels/level_1.gd) y cambia los caracteres. Cada carácter es una casilla de 32×32:
+| Carácter | Qué es | Carácter | Qué es |
+|----------|--------|----------|--------|
+| `#` | Suelo | `=` | Plataforma (se atraviesa desde abajo) |
+| `B` | Ladrillo (el casco lo rompe) | `*` | Bloque sorpresa con moneda |
+| `h` | Bloque con **casco** | `w` | Bloque con **pluma** |
+| `m` | Bloque con **imán** | `C` | Moneda |
+| `E` | Blob | `R` | Erizo |
+| `V` | Murciélago | `^` | Pinchos |
+| `L` | Lava | `S` | Muelle |
+| `>` | Plataforma móvil horizontal | `v` | Plataforma móvil vertical |
+| `K` | Punto de control | `P` | Inicio del jugador |
+| `F` | Bandera de meta | (espacio) | Vacío |
 
-| Carácter | Qué es |
-|----------|--------|
-| `#` | Suelo |
-| `B` | Ladrillo |
-| `*` | Bloque sorpresa (moneda) |
-| `C` | Moneda |
-| `E` | Enemigo (Blob) |
-| `^` | Pinchos |
-| `P` | Inicio del jugador |
-| `F` | Bandera de meta |
+Varios `>` o `v` seguidos forman una plataforma móvil más ancha (se mueve 3 casillas a cada lado).
 
-Para crear un nivel nuevo, duplica `level_1.gd` y `level_1.tscn`, cambia el mapa y haz que el `.tscn` nuevo use el script nuevo. Después añade la ruta del `.tscn` a la lista `LEVELS` de [game.gd](scripts/game.gd): al completar un nivel se pasa al siguiente de la lista.
+Medidas útiles para diseñar: Pip salta unas **4 casillas de alto** y cruza unos **4 huecos andando o 6 corriendo**; un muelle lanza unas **10 casillas**.
+
+Para crear un nivel nuevo:
+1. Duplica `level_1.gd` y `level_1.tscn` (por ejemplo `level_5`), y haz que el `.tscn` nuevo use el script nuevo.
+2. En el script, cambia el mapa y el tema en `get_theme_id()`: `"meadow"`, `"cave"`, `"sky"` o `"volcano"`.
+3. Añade la escena y su nombre a la lista `LEVELS` de [game.gd](scripts/game.gd).
+
+Ejecutando el juego desde el editor todos los niveles aparecen desbloqueados en **Elegir nivel**, para poder probarlos.
+
+### Cómo editar la música y los sonidos
+
+Todo el audio se genera por código en [sfx.gd](scripts/sfx.gd). Para lanzar un efecto: `Sfx.play("jump")`. Para la música: `Sfx.play_music("meadow")`.
+
+- **Canciones** (`SONGS`): cada una tiene tempo (`bpm`), acordes por compás (`"C"`, `"Am"`...), melodía (`"C5:2"` = Do5 durante 2 corcheas, `R` = silencio) y un patrón de batería de 16 pasos (`K` bombo, `S` caja, `h` charles).
+- Las canciones se generan en segundo plano la primera vez y se guardan en caché; si cambias una, su caché se regenera sola.
+- **Efectos**: están en `_build_sounds()`. Para usar archivos `.wav`/`.ogg`, basta con guardarlos en el diccionario `sounds`.
 
 ### Capas de colisión
 
 | Capa | Nombre | Quién |
 |------|--------|-------|
-| 1 | mundo | Suelo y bloques |
+| 1 | mundo | Suelo, bloques y plataformas |
 | 2 | jugador | Pip |
-| 3 | enemigos | Blobs |
-| 4 | objetos | Monedas, pinchos, meta |
+| 3 | enemigos | Blob, Erizo, Murciélago |
+| 4 | objetos | Monedas, pinchos, muelles, puntos de control, meta |
 
 ## Empezar
 
@@ -101,6 +151,6 @@ Propuesta (cada área toca carpetas distintas, así casi no habrá conflictos):
 
 | Persona | Área | Carpetas |
 |---------|------|----------|
-|         | Jugador y controles (power-ups, animaciones, sonidos) | `scenes/player/`, `scripts/` |
+|         | Jugador y mejoras (nuevos poderes, animaciones) | `scenes/player/`, `scripts/powers.gd` |
 |         | Enemigos y objetos (nuevos enemigos, bloques, ítems) | `scenes/enemies/`, `scenes/objects/` |
-|         | Niveles e interfaz (nuevos niveles, menú, pantalla de inicio) | `scenes/levels/`, `scenes/ui/` |
+|         | Niveles, música e interfaz (nuevos niveles, temas, menús) | `scenes/levels/`, `scenes/ui/`, `scripts/themes.gd`, `scripts/sfx.gd` |

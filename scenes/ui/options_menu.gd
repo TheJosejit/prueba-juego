@@ -18,6 +18,7 @@ func _ready() -> void:
 	fullscreen_check.toggled.connect(_on_fullscreen_toggled)
 	shake_check.toggled.connect(func(on: bool) -> void: Settings.screen_shake = on)
 	back_button.pressed.connect(close)
+	Sfx.wire_ui(self)
 
 
 func open() -> void:
