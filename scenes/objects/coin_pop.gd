@@ -3,6 +3,7 @@ extends Node2D
 
 
 func _ready() -> void:
+	physics_interpolation_mode = PHYSICS_INTERPOLATION_MODE_OFF # se anima cada fotograma, no con la física
 	var tween := create_tween()
 	tween.tween_property(self, "position:y", position.y - 48.0, 0.25) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

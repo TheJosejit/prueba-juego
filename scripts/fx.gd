@@ -42,6 +42,7 @@ static func popup(from: Node, pos: Vector2, text: String, color := Color.WHITE) 
 	label.size = Vector2(60, 16)
 	label.position = pos - label.size / 2.0
 	label.z_index = 10
+	label.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF # se anima cada fotograma
 	label.add_theme_font_size_override("font_size", 12)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)

@@ -13,6 +13,7 @@ extends Control
 
 func _ready() -> void:
 	Sfx.play_music()
+	title.physics_interpolation_mode = PHYSICS_INTERPOLATION_MODE_OFF # se anima cada fotograma
 	var screen := get_viewport_rect().size
 	scenery.ground_y = screen.y
 	scenery.width = screen.x + 200.0
