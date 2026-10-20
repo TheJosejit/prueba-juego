@@ -11,11 +11,14 @@ Plataformas 2D: lleva a **Pip** hasta la bandera de meta. Recoge monedas (50 = v
 | Moverse | A / D o ← / → | Cruceta o stick |
 | Saltar (mantener = más alto) | Espacio, W o ↑ | A |
 | Correr | Shift o J | X |
+| Silenciar / activar sonido | M | |
 
 ## Estructura
 
 ```
 scripts/game.gd          Autoload "Game": puntos, monedas, vidas y controles
+scripts/sfx.gd           Autoload "Sfx": sonidos y música (sintetizados por código)
+scripts/fx.gd            Clase "Fx": partículas y textos flotantes
 scenes/player/           Pip (movimiento, salto, muerte)
 scenes/enemies/          Blob
 scenes/objects/          Bloques, monedas, pinchos y bandera de meta
@@ -24,6 +27,8 @@ scenes/ui/               Marcador (HUD)
 ```
 
 Los gráficos se dibujan por código (`_draw()`), así que no hacen falta imágenes. Si añadís sprites, sustituid el `_draw()` de cada escena.
+
+El sonido también se genera por código. Para lanzar un efecto: `Sfx.play("jump")` (disponibles: `jump`, `coin`, `stomp`, `bump`, `one_up`, `die`, `win`, `game_over`). La música está en `MELODY` y `BASS` dentro de [sfx.gd](scripts/sfx.gd), escrita como notas (`"C5:2"` = Do5 durante 2 corcheas). Para usar archivos `.wav`/`.ogg`, basta con guardarlos en el diccionario `sounds`.
 
 ### Cómo editar un nivel
 

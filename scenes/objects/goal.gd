@@ -20,6 +20,8 @@ func _on_body_entered(body: Node2D) -> void:
 	reached = true
 	body.win()
 	create_tween().tween_property(self, "flag_y", -40.0, 0.8)
+	for color in [Color("ffd23f"), Color("2ec4b6"), Color("ff8c42"), Color("9b5de5")]:
+		Fx.burst(self, global_position + Vector2(0, -POLE_HEIGHT), color, 12, 220.0)
 	Game.level_complete()
 
 

@@ -23,8 +23,11 @@ func hit_from_below() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "bump", 8.0, 0.06)
 	tween.tween_property(self, "bump", 0.0, 0.08)
+	Sfx.play("bump", 0.05)
+	Fx.burst(self, global_position + Vector2(0, -16), BONUS_LIGHT if has_coin and not used else BRICK, 5, 80.0)
 	if has_coin and not used:
 		used = true
+		Fx.popup(self, global_position + Vector2(0, -60), "+100", Color("ffd23f"))
 		var pop := CoinPop.new()
 		pop.position = position + Vector2(0, -32)
 		get_parent().add_child(pop)

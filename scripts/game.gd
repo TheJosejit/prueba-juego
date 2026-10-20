@@ -34,9 +34,11 @@ func add_score(points: int) -> void:
 func add_coin() -> void:
 	coins += 1
 	score += 100
+	Sfx.play("coin")
 	if coins >= COINS_PER_LIFE:
 		coins -= COINS_PER_LIFE
 		lives += 1
+		Sfx.play("one_up")
 	stats_changed.emit()
 
 
@@ -45,6 +47,7 @@ func player_died() -> void:
 	stats_changed.emit()
 	if lives <= 0:
 		message.emit("GAME OVER")
+		Sfx.play("game_over")
 		await get_tree().create_timer(2.5).timeout
 		reset()
 	get_tree().reload_current_scene()
@@ -52,6 +55,8 @@ func player_died() -> void:
 
 func level_complete() -> void:
 	add_score(1000)
+	Sfx.stop_music()
+	Sfx.play("win")
 	message.emit("¡NIVEL COMPLETADO!")
 	await get_tree().create_timer(3.0).timeout
 	reset()

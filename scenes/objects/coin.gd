@@ -17,6 +17,7 @@ func _process(delta: float) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		Game.add_coin()
+		Fx.burst(self, global_position, Color("ffe98a"), 8, 90.0)
 		queue_free()
 
 
