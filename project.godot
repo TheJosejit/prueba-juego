@@ -11,13 +11,29 @@ config_version=5
 [application]
 
 config/name="PruebaJuego"
+run/main_scene="res://scenes/levels/level_1.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+Game="*res://scripts/game.gd"
+
 [display]
 
+window/size/viewport_width=640
+window/size/viewport_height=360
+window/size/window_width_override=1280
+window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[layer_names]
+
+2d_physics/layer_1="mundo"
+2d_physics/layer_2="jugador"
+2d_physics/layer_3="enemigos"
+2d_physics/layer_4="objetos"
 
 [physics]
 

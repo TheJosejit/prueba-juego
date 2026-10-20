@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/enemies/blob.gd" id="1_blob"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_blob"]
+size = Vector2(24, 18)
+
+[node name="Blob" type="CharacterBody2D" groups=["enemies"]]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_blob")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -9)
+shape = SubResource("RectangleShape2D_blob")
