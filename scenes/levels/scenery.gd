@@ -54,14 +54,21 @@ func _draw_far(rng: RandomNumberGenerator, style: String) -> void:
 				var w := rng.randf_range(160, 280)
 				var h := rng.randf_range(140, 230)
 				var peak := Vector2(x + w / 2.0 + rng.randf_range(-30, 30), ground_y - h)
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(x, ground_y + 40), peak, Vector2(x + w, ground_y + 40),
-				]), far)
+				var base_left := Vector2(x, ground_y + 40)
+				var base_right := Vector2(x + w, ground_y + 40)
+				var haze: Color = far.lerp(theme.sky_bottom, 0.55) # neblina: la base se funde con el cielo
+				DrawKit.gradient_fill(self, PackedVector2Array([base_left, peak, base_right]), far, haze)
+				# Ladera en sombra (lado derecho)
+				draw_polygon(PackedVector2Array([peak, base_right, peak.lerp(base_right, 0.5) + Vector2(-w * 0.12, 0)]),
+					PackedColorArray([Color(0, 0, 0, 0.12), Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.06)]))
 				if style == "grass":
-					draw_colored_polygon(PackedVector2Array([
-						peak, peak + Vector2(-h * 0.22, h * 0.25), peak + Vector2(-h * 0.05, h * 0.2),
-						peak + Vector2(h * 0.08, h * 0.27), peak + Vector2(h * 0.2, h * 0.24),
-					]), light)
+					var snow := PackedVector2Array([
+						peak, peak + Vector2(h * 0.2, h * 0.24), peak + Vector2(h * 0.08, h * 0.27),
+						peak + Vector2(-h * 0.05, h * 0.2), peak + Vector2(-h * 0.22, h * 0.25),
+					])
+					DrawKit.gradient_fill(self, snow, Color.WHITE, light)
+					draw_colored_polygon(PackedVector2Array([peak, peak + Vector2(h * 0.2, h * 0.24), peak + Vector2(h * 0.08, h * 0.27)]),
+						Color(0.6, 0.75, 0.9, 0.35)) # cara en sombra de la nieve
 				else: # cima incandescente
 					draw_colored_polygon(PackedVector2Array([
 						peak, peak + Vector2(-h * 0.08, h * 0.12), peak + Vector2(h * 0.08, h * 0.12),
@@ -96,14 +103,21 @@ func _draw_near(rng: RandomNumberGenerator, style: String) -> void:
 		"grass":
 			while x < width:
 				var radius := rng.randf_range(60, 130)
-				draw_circle(Vector2(x, ground_y + 30), radius, near if i % 2 == 0 else near_alt)
+				var hill: Color = near if i % 2 == 0 else near_alt
+				var center := Vector2(x, ground_y + 30)
+				DrawKit.gradient_fill(self, DrawKit.circle(center, radius, 40), hill.lightened(0.1), hill.darkened(0.15))
+				draw_arc(center, radius - 4.0, PI * 1.2, PI * 1.4, 12, Color(1, 1, 1, 0.12), 4.0, true)
 				if rng.randf() < 0.6: # árbol
 					var tx := x + rng.randf_range(-radius * 0.5, radius * 0.5)
 					var ty := ground_y + 30 - sqrt(maxf(radius * radius - pow(tx - x, 2), 0.0))
 					var sway := sin(anim_time * 1.3 + tx * 0.02) * 2.0
-					draw_rect(Rect2(tx - 3, ty - 26, 6, 28), Color("6b4a2f"))
-					draw_circle(Vector2(tx + sway, ty - 32), 15.0, near.darkened(0.15))
-					draw_circle(Vector2(tx - 6 + sway * 1.3, ty - 38), 9.0, near.darkened(0.05))
+					var trunk := DrawKit.rounded_rect(Rect2(tx - 3, ty - 26, 6, 28), 2.0)
+					DrawKit.gradient_fill(self, trunk, Color("8a5f3c"), Color("5a3b22"))
+					var leaves: Color = near.darkened(0.12)
+					for blob in [[Vector2(-7, -30), 10.0], [Vector2(7, -31), 10.0], [Vector2(0, -40), 12.0]]:
+						var c: Vector2 = Vector2(tx + sway, ty) + blob[0]
+						DrawKit.gradient_fill(self, DrawKit.circle(c, blob[1], 20), leaves.lightened(0.15), leaves.darkened(0.15))
+					DrawKit.shine(self, Vector2(tx - 4 + sway, ty - 45), Vector2(4, 2.5), 0.3)
 				x += rng.randf_range(140, 260)
 				i += 1
 		"stone":
@@ -156,8 +170,13 @@ func _draw_clouds(rng: RandomNumberGenerator, style: String) -> void:
 		var y := rng.randf_range(20, 160)
 		var s := rng.randf_range(0.8, 1.6)
 		var cx := fmod(x + anim_time * 5.0 * s, width + 300.0) - 150.0 # se desplazan despacio
-		for puff in [Vector2(0, 0), Vector2(18, -10), Vector2(36, 0), Vector2(18, 6), Vector2(-14, 4)]:
-			draw_circle(Vector2(cx, y) + puff * s, 16.0 * s, color)
+		var puffs := [Vector2(0, 0), Vector2(18, -10), Vector2(36, 0), Vector2(18, 6), Vector2(-14, 4)]
+		var underside := Color(color.r * 0.9, color.g * 0.94, color.b * 1.0, color.a) # base de la nube en sombra
+		for puff in puffs:
+			draw_circle(Vector2(cx, y + 3.0 * s) + puff * s, 15.5 * s, underside)
+		for puff in puffs:
+			draw_circle(Vector2(cx, y) + puff * s, 15.0 * s, color)
+		draw_circle(Vector2(cx + 14.0 * s, y - 14.0 * s), 6.0 * s, Color(1, 1, 1, 0.6 * color.a))
 		x += rng.randf_range(160, 320) * (0.6 if style == "cloud" else 1.0)
 	if style == "rock": # brasas que suben
 		for k in 40:

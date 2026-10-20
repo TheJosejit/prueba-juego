@@ -29,12 +29,12 @@ const SLEEP_TIME := 6.0 # segundos quieto hasta que se duerme
 
 const OUTLINE := Color("3a1f14")
 const BODY_COLOR := Color("ff8c42")
-const BODY_SHADE := Color("e0682a")
-const BODY_LIGHT := Color("ffb57f")
-const BELLY_COLOR := Color("ffe0bd")
-const SCARF_COLOR := Color("2ec4b6")
-const SCARF_DARK := Color("1d8f84")
-const FEET_COLOR := Color("6b3e26")
+const BODY_SHADE := Color("e8642a")
+const BODY_LIGHT := Color("ffb173")
+const BELLY_COLOR := Color("ffd9b0")
+const SCARF_COLOR := Color("3fd6c8")
+const SCARF_DARK := Color("1d9a8e")
+const FEET_COLOR := Color("7a4a30")
 const CHEEK_COLOR := Color(1.0, 0.45, 0.45, 0.5)
 
 var facing := 1.0
@@ -407,7 +407,7 @@ func win() -> void:
 	tween.tween_property(camera, "zoom", Vector2(1.15, 1.15), 1.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
-# --- Dibujo ---
+# --- Dibujo (estilo cartoon pulido: degradados, contorno grueso y brillos; ver DrawKit) ---
 
 func _draw() -> void:
 	var dir := signf(flip) if flip != 0.0 else facing
@@ -415,6 +415,8 @@ func _draw() -> void:
 		draw_set_transform(Vector2(0, -14), PI, Vector2.ONE)
 		_draw_body(Vector2(0, 14), dir)
 		return
+	if is_on_floor():
+		DrawKit.contact_shadow(self, Vector2(0, 0), 13.0 * squash.x, 0.3)
 	var lean := clampf(velocity.x / RUN_SPEED, -1.0, 1.0) * (0.1 if is_on_floor() else 0.05)
 	if skidding:
 		lean = -facing * 0.2
@@ -427,8 +429,10 @@ func _draw() -> void:
 		var font := ThemeDB.fallback_font
 		for i in 3:
 			var phase := fmod(anim_time * 0.5 + i / 3.0, 1.0)
-			draw_string(font, Vector2(8 + phase * 12.0, -34 - phase * 22.0), "z",
-				HORIZONTAL_ALIGNMENT_LEFT, -1, int(8 + 6 * phase), Color(1, 1, 1, 1.0 - phase))
+			var pos := Vector2(8 + phase * 12.0, -36 - phase * 22.0)
+			var size := int(8 + 6 * phase)
+			draw_string_outline(font, pos, "z", HORIZONTAL_ALIGNMENT_LEFT, -1, size, 3, Color(OUTLINE, 1.0 - phase))
+			draw_string(font, pos, "z", HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(1, 1, 1, 1.0 - phase))
 
 
 func _draw_body(origin: Vector2, f: float) -> void:
@@ -443,32 +447,36 @@ func _draw_body(origin: Vector2, f: float) -> void:
 	var body := origin + Vector2(0, bob)
 	var sleeping := idle_time > SLEEP_TIME
 
-	# Bufanda ondeando (detrás del cuerpo)
+	# Cola de la bufanda ondeando (detrás del cuerpo)
 	var scarf_base := body + Vector2(-f * 8.0, -15)
 	var scarf := PackedVector2Array()
-	var length := 7.0 + minf(absf(velocity.x) / 22.0, 9.0) + (4.0 if not on_floor else 0.0)
-	for i in 6:
-		var t := i / 5.0
-		var wave := sin(anim_time * 14.0 - i * 1.2) * 2.0 * t
+	var length := 8.0 + minf(absf(velocity.x) / 22.0, 9.0) + (4.0 if not on_floor else 0.0)
+	for i in 7:
+		var t := i / 6.0
+		var wave := sin(anim_time * 14.0 - i * 1.1) * 2.2 * t
 		var lift := clampf(velocity.y / 300.0, -1.0, 1.0) * -4.0 * t
 		scarf.append(scarf_base + Vector2(-f * t * length, t * 5.0 + wave + lift))
-	draw_polyline(scarf, OUTLINE, 6.0, true)
-	draw_polyline(scarf, SCARF_DARK, 4.0, true)
+	draw_polyline(scarf, OUTLINE, 7.0, true)
+	draw_polyline(scarf, SCARF_DARK, 4.5, true)
+	draw_polyline(scarf.slice(0, 4), SCARF_COLOR, 2.0, true)
+	var scarf_end := scarf[scarf.size() - 1] + Vector2(-f * 1.0, 0)
+	draw_circle(scarf_end, 2.6, OUTLINE)
+	draw_circle(scarf_end, 1.6, SCARF_COLOR)
 
 	# Alas de la PLUMA (detrás del cuerpo)
 	if power == Powers.Kind.FEATHER and not dead:
 		var flap := sin(anim_time * (22.0 if gliding else 6.0)) * (6.0 if not on_floor else 2.0)
 		for side in [-1.0, 1.0]:
 			var wing := PackedVector2Array([
-				body + Vector2(side * 8.0, -16),
-				body + Vector2(side * 21.0, -24 - flap),
-				body + Vector2(side * 19.0, -16 - flap * 0.5),
-				body + Vector2(side * 15.0, -11),
+				body + Vector2(side * 8.0, -17),
+				body + Vector2(side * 16.0, -23 - flap * 0.7),
+				body + Vector2(side * 22.0, -25 - flap),
+				body + Vector2(side * 21.0, -18 - flap * 0.5),
+				body + Vector2(side * 17.0, -12),
+				body + Vector2(side * 10.0, -11),
 			])
-			var wing_outline := wing.duplicate()
-			wing_outline.append(wing[0])
-			draw_colored_polygon(wing, Color.WHITE)
-			draw_polyline(wing_outline, OUTLINE, 1.5, true)
+			DrawKit.shape(self, wing, Color.WHITE, Color("cfe3f7"), 1.5)
+			draw_line(body + Vector2(side * 11.0, -15), body + Vector2(side * 19.0, -21 - flap * 0.8), Color("a9c6e6"), 1.0, true)
 
 	# Manos: se balancean al andar, arriba al saltar
 	var swing := sin(cycle) * 4.0 if walking else 0.0
@@ -483,63 +491,36 @@ func _draw_body(origin: Vector2, f: float) -> void:
 		front_hand = body + Vector2(f * 13.0, -16)
 	_draw_hand(back_hand)
 
-	# Pies
-	for foot in [Vector2(-10, -5 - maxf(step, 0.0)), Vector2(2, -5 - maxf(-step, 0.0))]:
-		draw_rect(Rect2(origin + foot - Vector2(1, 1), Vector2(10, 7)), OUTLINE)
-		draw_rect(Rect2(origin + foot, Vector2(8, 5)), FEET_COLOR)
+	# Zapatos
+	for foot in [Vector2(-5.5, -3.0 - maxf(step, 0.0)), Vector2(5.5, -3.0 - maxf(-step, 0.0))]:
+		var shoe: Vector2 = origin + foot + Vector2(f * 1.5, 0)
+		DrawKit.shape(self, DrawKit.ellipse(shoe, Vector2(5.5, 3.5), 14), FEET_COLOR.lightened(0.15), FEET_COLOR.darkened(0.25), 1.5)
+		draw_line(shoe + Vector2(-3, -1.8), shoe + Vector2(1.5, -2.2), Color(1, 1, 1, 0.35), 1.2, true)
 
-	# Cuerpo redondo con contorno, sombra y brillo
-	draw_circle(body + Vector2(0, -20), 12.5, OUTLINE)
-	draw_rect(Rect2(body + Vector2(-12.5, -20), Vector2(25, 16.5)), OUTLINE)
-	draw_circle(body + Vector2(0, -20), 11.0, BODY_COLOR)
-	draw_rect(Rect2(body + Vector2(-11, -20), Vector2(22, 15)), BODY_COLOR)
-	draw_rect(Rect2(body + Vector2(-11, -9), Vector2(22, 4)), BODY_SHADE)
-	draw_circle(body + Vector2(-5, -26), 3.0, BODY_LIGHT)
-	draw_circle(body + Vector2(f * 2.0, -10), 6.0, BELLY_COLOR)
-	# Mechón (se mueve con el salto)
+	# Cuerpo: forma redondeada con degradado, contorno grueso y brillos
+	var shape := DrawKit.rounded_rect(Rect2(body + Vector2(-11.5, -31.5), Vector2(23, 28)), 11.5, 7.0)
+	DrawKit.shape(self, shape, BODY_LIGHT, BODY_SHADE, 2.0)
+	draw_arc(body + Vector2(0, -20), 9.5, PI * 1.1, PI * 1.45, 8, Color(1, 1, 1, 0.5), 2.0, true)
+	DrawKit.shine(self, body + Vector2(-6, -26.5), Vector2(2.6, 1.8), 0.7)
+	# Barriga
+	DrawKit.shape(self, DrawKit.ellipse(body + Vector2(f * 2.0, -10.5), Vector2(6.5, 5.5), 18), Color("fff4e4"), BELLY_COLOR, 0.0)
+	# Mechón (tres puntas que se mueven con el salto)
 	var tuft := clampf(-velocity.y / 400.0, -1.0, 1.0) * 2.0
-	draw_colored_polygon(PackedVector2Array([
-		body + Vector2(-3, -30), body + Vector2(-1 - tuft, -36 + absf(tuft)), body + Vector2(2, -31),
-		body + Vector2(5 - tuft, -35 + absf(tuft)), body + Vector2(5, -29),
-	]), BODY_COLOR)
-	# Bufanda alrededor del cuello
-	draw_rect(Rect2(body + Vector2(-12, -18), Vector2(24, 6)), OUTLINE)
-	draw_rect(Rect2(body + Vector2(-11, -17), Vector2(22, 4)), SCARF_COLOR)
+	for k in 3:
+		var base := body + Vector2(-3.0 + k * 3.5, -30.5)
+		var tip := base + Vector2((k - 1) * 2.0 - tuft * 0.6, -6.0 + absf(tuft) * 0.5 - (1.5 if k == 1 else 0.0))
+		var strand := PackedVector2Array([base + Vector2(-2.2, 1), tip, base + Vector2(2.2, 1)])
+		DrawKit.shape(self, strand, BODY_LIGHT, BODY_COLOR, 1.2)
+	# Bufanda alrededor del cuello, con rayas y nudo
+	var band := DrawKit.rounded_rect(Rect2(body + Vector2(-12.5, -18.5), Vector2(25, 6)), 3.0)
+	DrawKit.shape(self, band, SCARF_COLOR, SCARF_DARK, 1.5)
+	for k in 3:
+		var x := -7.0 + k * 7.0 + f * 1.5
+		draw_line(body + Vector2(x, -17.8), body + Vector2(x - 2.0, -13.2), Color(1, 1, 1, 0.45), 1.5, true)
+	draw_circle(body + Vector2(-f * 8.5, -15.5), 3.2, OUTLINE)
+	draw_circle(body + Vector2(-f * 8.5, -15.5), 2.2, SCARF_DARK)
 
-	# Cara
-	var face := body + Vector2(f * 3.0, 0)
-	draw_circle(face + Vector2(8.0, -18.5), 2.2, CHEEK_COLOR)
-	draw_circle(face + Vector2(-8.0, -18.5), 2.2, CHEEK_COLOR)
-	var look := Vector2(f * 1.1, clampf(velocity.y / 400.0, -1.0, 1.0) * 0.9)
-	for side in [-1.0, 1.0]:
-		var eye := face + Vector2(side * 4.0, -24)
-		if dead:
-			draw_line(eye - Vector2(2, 2), eye + Vector2(2, 2), OUTLINE, 1.5)
-			draw_line(eye + Vector2(-2, 2), eye + Vector2(2, -2), OUTLINE, 1.5)
-		elif finished:
-			draw_arc(eye + Vector2(0, 1.5), 2.5, PI, TAU, 8, OUTLINE, 1.5, true) # ojos felices ^ ^
-		elif sleeping or blink > 0.0:
-			draw_line(eye - Vector2(2.5, -0.5), eye + Vector2(2.5, 0.5), OUTLINE, 1.5)
-		elif invincible > 0.0:
-			draw_polyline(PackedVector2Array([ # ojos apretados > <
-				eye + Vector2(side * 2.5, -1.5), eye + Vector2(-side * 2.0, 0), eye + Vector2(side * 2.5, 1.5),
-			]), OUTLINE, 1.5, true)
-		else:
-			draw_circle(eye, 3.4, OUTLINE)
-			draw_circle(eye, 2.8, Color.WHITE)
-			draw_circle(eye + look, 1.6, OUTLINE)
-			draw_circle(eye + look * 0.4 + Vector2(-0.6, -0.9), 0.7, Color.WHITE)
-	# Boca
-	var mouth := face + Vector2(0, -19.5)
-	if dead or invincible > 0.0:
-		draw_arc(mouth + Vector2(0, 2.0), 2.0, PI + 0.4, TAU - 0.4, 6, OUTLINE, 1.2, true)
-	elif finished:
-		draw_arc(mouth + Vector2(0, -0.5), 2.8, 0.1, PI - 0.1, 8, OUTLINE, 1.6, true)
-	elif sleeping or (not on_floor and absf(velocity.y) > 250.0):
-		draw_circle(mouth + Vector2(0, 0.5), 1.4 + (0.4 * sin(anim_time * 2.5) if sleeping else 0.0), OUTLINE)
-	else:
-		draw_arc(mouth, 1.8, 0.3, PI - 0.3, 6, OUTLINE, 1.2, true)
-
+	_draw_face(body + Vector2(f * 3.0, 0), f, on_floor, sleeping)
 	_draw_hand(front_hand)
 
 	# Accesorios de las mejoras
@@ -548,16 +529,76 @@ func _draw_body(origin: Vector2, f: float) -> void:
 	match power:
 		Powers.Kind.HELMET:
 			Powers.draw_dome(self, body + Vector2(0, -24), 12.5, Powers.HELMET_COLOR)
-			draw_rect(Rect2(body + Vector2(-14, -25), Vector2(28, 4)), Powers.OUTLINE)
-			draw_rect(Rect2(body + Vector2(-13, -24.5), Vector2(26, 2.5)), Powers.HELMET_COLOR.darkened(0.25))
-			draw_circle(body + Vector2(f * 5.0, -31), 3.0, Powers.OUTLINE)
-			draw_circle(body + Vector2(f * 5.0, -31), 2.2, Color("fff6c2"))
+			var brim := DrawKit.rounded_rect(Rect2(body + Vector2(-14, -25.5), Vector2(28, 4)), 2.0)
+			DrawKit.shape(self, brim, Powers.HELMET_COLOR, Powers.HELMET_COLOR.darkened(0.3), 1.5)
+			var lamp := body + Vector2(f * 5.0, -31)
+			draw_circle(lamp, 6.0, Color(1, 0.95, 0.6, 0.25 + 0.1 * sin(anim_time * 6.0)))
+			draw_circle(lamp, 3.2, Powers.OUTLINE)
+			draw_circle(lamp, 2.3, Color("fff6c2"))
 		Powers.Kind.MAGNET:
-			Powers.draw_icon(self, Powers.Kind.MAGNET, body + Vector2(0, -38), 0.6)
+			Powers.draw_icon(self, Powers.Kind.MAGNET, body + Vector2(0, -40), 0.6)
 			var pulse := fmod(anim_time, 1.0)
 			draw_arc(body + Vector2(0, -16), 14.0 + pulse * 20.0, 0.0, TAU, 32, Color(1, 0.3, 0.35, 0.4 * (1.0 - pulse)), 1.5, true)
 
 
+func _draw_face(face: Vector2, f: float, on_floor: bool, sleeping: bool) -> void:
+	# Mejillas
+	for side in [-1.0, 1.0]:
+		var cheek := face + Vector2(side * 8.0, -18.0)
+		draw_colored_polygon(DrawKit.ellipse(cheek, Vector2(3.0, 1.8), 12), CHEEK_COLOR)
+		draw_colored_polygon(DrawKit.ellipse(cheek, Vector2(1.8, 1.0), 10), Color(CHEEK_COLOR, 0.35))
+	# Ojos y cejas
+	var look := Vector2(f * 0.9, clampf(velocity.y / 400.0, -1.0, 1.0) * 0.8)
+	var brow_lift := 0.0
+	if not on_floor and velocity.y < 0.0:
+		brow_lift = 1.5 # sorpresa al saltar
+	elif absf(velocity.x) > RUN_SPEED * 0.8:
+		brow_lift = -0.8 # concentrado al correr
+	for side in [-1.0, 1.0]:
+		var eye := face + Vector2(side * 4.2, -24)
+		if dead:
+			draw_line(eye - Vector2(2, 2), eye + Vector2(2, 2), OUTLINE, 1.6, true)
+			draw_line(eye + Vector2(-2, 2), eye + Vector2(2, -2), OUTLINE, 1.6, true)
+			continue
+		if finished:
+			draw_arc(eye + Vector2(0, 1.5), 2.6, PI, TAU, 10, OUTLINE, 1.7, true) # ojos felices ^ ^
+			continue
+		if sleeping or blink > 0.0:
+			draw_arc(eye + Vector2(0, -0.5), 2.6, 0.2, PI - 0.2, 10, OUTLINE, 1.6, true) # cerrados
+			continue
+		if invincible > 0.0:
+			draw_polyline(PackedVector2Array([ # ojos apretados > <
+				eye + Vector2(side * 2.5, -1.5), eye + Vector2(-side * 2.0, 0), eye + Vector2(side * 2.5, 1.5),
+			]), OUTLINE, 1.6, true)
+			continue
+		draw_colored_polygon(DrawKit.ellipse(eye, Vector2(3.4, 4.0), 16), OUTLINE)
+		draw_colored_polygon(DrawKit.ellipse(eye, Vector2(2.6, 3.2), 16), Color.WHITE)
+		var iris := eye + look
+		draw_circle(iris, 2.0, Color("5a3420"))
+		draw_circle(iris, 1.2, Color("1a0f0a"))
+		draw_circle(iris + Vector2(-0.8, -1.1), 0.75, Color.WHITE)
+		draw_circle(iris + Vector2(0.7, 0.8), 0.35, Color(1, 1, 1, 0.8))
+		var brow := eye + Vector2(0, -5.2 - brow_lift)
+		var inner_drop := 0.6 if brow_lift < 0.0 else 0.0
+		draw_line(brow + Vector2(-side * 2.2, inner_drop), brow + Vector2(side * 2.0, -0.4), OUTLINE, 1.4, true)
+	# Boca
+	var mouth := face + Vector2(0, -19.0)
+	if dead or invincible > 0.0:
+		draw_arc(mouth + Vector2(0, 2.2), 2.0, PI + 0.4, TAU - 0.4, 8, OUTLINE, 1.3, true)
+	elif finished:
+		var smile := PackedVector2Array()
+		for i in 9:
+			var a := PI * i / 8.0
+			smile.append(mouth + Vector2(-cos(a) * 3.0, -0.5 + sin(a) * 3.0))
+		draw_colored_polygon(smile, OUTLINE)
+		draw_colored_polygon(DrawKit.ellipse(mouth + Vector2(0, 1.4), Vector2(1.5, 0.8), 10), Color("ff6b7a"))
+	elif sleeping or (not on_floor and absf(velocity.y) > 250.0):
+		var open := 1.3 + (0.4 * sin(anim_time * 2.5) if sleeping else 0.3)
+		draw_colored_polygon(DrawKit.ellipse(mouth + Vector2(0, 0.5), Vector2(open * 0.9, open), 12), OUTLINE)
+	else:
+		draw_arc(mouth, 1.9, 0.3, PI - 0.3, 8, OUTLINE, 1.3, true)
+
+
 func _draw_hand(pos: Vector2) -> void:
-	draw_circle(pos, 4.0, OUTLINE)
-	draw_circle(pos, 2.8, BODY_SHADE)
+	DrawKit.shape(self, DrawKit.circle(pos, 2.9, 12), BODY_COLOR, BODY_SHADE, 1.4)
+	draw_circle(pos + Vector2(-0.8, -0.9), 0.9, Color(1, 1, 1, 0.45))

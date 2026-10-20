@@ -50,14 +50,28 @@ func _add_shape(x0: int, x1: int, y: int) -> void:
 	add_child(collision)
 
 
+func _ready() -> void:
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED # para el grano
+
+
+## Color de relleno según la profundidad (cuántas casillas de suelo hay encima): más oscuro abajo.
+func _fill_color(d: float) -> Color:
+	if d < 2.0:
+		return (theme.fill as Color).lerp(theme.fill_dark, d / 2.0)
+	return (theme.fill_dark as Color).lerp(theme.fill_deep, clampf((d - 2.0) / 2.0, 0.0, 1.0))
+
+
 func _draw() -> void:
 	var style: String = theme.get("style", "grass")
+	var grain_strength := {"grass": 0.3, "rock": 0.35, "stone": 0.2, "cloud": 0.08}.get(style, 0.25) as float
 	for cell: Vector2i in cells:
 		var pos := Vector2(cell) * TILE
-		var d: int = depth.get(cell, 0)
-		var fill: Color = theme.fill if d < 2 else (theme.fill_dark if d < 4 else theme.fill_deep)
+		var rect := Rect2(pos, Vector2(TILE, TILE))
+		var d: float = depth.get(cell, 0)
+		var fill := _fill_color(d)
 		var h := _hash(cell)
-		draw_rect(Rect2(pos, Vector2(TILE, TILE)), fill)
+		DrawKit.gradient_fill(self, PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end,
+			Vector2(rect.position.x, rect.end.y)]), fill, _fill_color(d + 1.0))
 		match style:
 			"stone":
 				var mortar: Color = fill.darkened(0.3)
@@ -65,32 +79,64 @@ func _draw() -> void:
 				var off := 8.0 if cell.y % 2 == 0 else 24.0
 				draw_line(pos + Vector2(off, 0), pos + Vector2(off, 16), mortar, 2.0)
 				draw_line(pos + Vector2(fmod(off + 16.0, 32.0), 16), pos + Vector2(fmod(off + 16.0, 32.0), 32), mortar, 2.0)
-				draw_rect(Rect2(pos + Vector2(2, 2), Vector2(10, 2)), fill.lightened(0.12))
+				draw_line(pos + Vector2(2, 2), pos + Vector2(12, 2), fill.lightened(0.15), 1.5)
 			"cloud":
 				draw_circle(pos + Vector2(8 + h % 16, 12 + h % 11), 6.0, fill.lightened(0.4))
 			_:
-				# Motas en la tierra o la roca
-				draw_rect(Rect2(pos + Vector2(4 + h % 20, 14 + h % 13), Vector2(5, 3)), fill.darkened(0.2))
-				draw_rect(Rect2(pos + Vector2(4 + (h >> 4) % 20, 4 + (h >> 3) % 10), Vector2(3, 3)), fill.lightened(0.12))
-		# Laterales y parte inferior expuestos: más oscuros, para que los bloques se lean bien
+				if h % 3 == 0: # piedrecita con brillo
+					var stone := pos + Vector2(6 + h % 18, 15 + h % 11)
+					var radii := Vector2(2.6 + h % 2, 1.9)
+					draw_colored_polygon(DrawKit.ellipse(stone + Vector2(0, 1), radii, 12), Color(0, 0, 0, 0.18))
+					DrawKit.gradient_fill(self, DrawKit.ellipse(stone, radii, 12), fill.lightened(0.35), fill.lightened(0.05))
+					draw_circle(stone + Vector2(-0.8, -0.7), 0.7, Color(1, 1, 1, 0.45))
+				draw_circle(pos + Vector2(4 + (h >> 4) % 22, 5 + (h >> 3) % 9), 1.2, fill.darkened(0.25))
+		DrawKit.grain(self, rect, grain_strength)
+		# Laterales y parte inferior expuestos: sombra suave hacia dentro
+		var shade := Color(0, 0, 0, 0.32)
+		var clear := Color(0, 0, 0, 0)
 		if not cells.has(cell + Vector2i.LEFT):
-			draw_rect(Rect2(pos, Vector2(3, TILE)), fill.darkened(0.3))
+			draw_polygon(PackedVector2Array([pos, pos + Vector2(6, 0), pos + Vector2(6, TILE), pos + Vector2(0, TILE)]),
+				PackedColorArray([shade, clear, clear, shade]))
 		if not cells.has(cell + Vector2i.RIGHT):
-			draw_rect(Rect2(pos + Vector2(TILE - 3, 0), Vector2(3, TILE)), fill.darkened(0.3))
+			draw_polygon(PackedVector2Array([pos + Vector2(TILE - 6, 0), pos + Vector2(TILE, 0), pos + Vector2(TILE, TILE), pos + Vector2(TILE - 6, TILE)]),
+				PackedColorArray([clear, shade, shade, clear]))
 		if not cells.has(cell + Vector2i.DOWN):
-			draw_rect(Rect2(pos + Vector2(0, TILE - 4), Vector2(TILE, 4)), fill.darkened(0.35))
+			draw_polygon(PackedVector2Array([pos + Vector2(0, TILE - 6), pos + Vector2(TILE, TILE - 6), pos + Vector2(TILE, TILE), pos + Vector2(0, TILE)]),
+				PackedColorArray([clear, clear, shade, shade]))
 		if not cells.has(cell + Vector2i.UP):
-			_draw_top(pos, h, style)
+			_draw_top(pos, cell, style)
 
 
-func _draw_top(pos: Vector2, _h: int, style: String) -> void:
+func _is_top(cell: Vector2i) -> bool:
+	return cells.has(cell) and not cells.has(cell + Vector2i.UP)
+
+
+func _draw_top(pos: Vector2, cell: Vector2i, style: String) -> void:
 	var top: Color = theme.top
 	var top_dark: Color = theme.top_dark
 	match style:
 		"grass":
-			draw_rect(Rect2(pos, Vector2(TILE, 10)), top)
-			draw_rect(Rect2(pos + Vector2(0, 10), Vector2(TILE, 3)), top_dark)
-			draw_rect(Rect2(pos, Vector2(TILE, 2)), top.lightened(0.25))
+			# Capa de hierba con el borde inferior ondulado, que "cuelga" sobre la tierra
+			var edge := PackedVector2Array()
+			for i in 17:
+				var x := i * 2.0
+				edge.append(pos + Vector2(x, 8.5 + 2.4 * absf(sin((pos.x + x) * PI / 8.0))))
+			var shadow := edge.duplicate()
+			for i in shadow.size():
+				shadow[i].y += 2.5
+			draw_polyline(shadow, Color(0, 0, 0, 0.2), 3.0, true)
+			var lip := PackedVector2Array([pos + Vector2(0, -1), pos + Vector2(TILE, -1)])
+			var reversed := edge.duplicate()
+			reversed.reverse()
+			lip.append_array(reversed)
+			DrawKit.gradient_fill(self, lip, top.lightened(0.18), top_dark)
+			draw_polyline(edge, top_dark.darkened(0.2), 1.0, true)
+			draw_line(pos + Vector2(0, 0.5), pos + Vector2(TILE, 0.5), Color(1, 1, 1, 0.35), 1.2)
+			# Extremos redondeados donde termina el césped
+			for side in [-1, 1]:
+				if not _is_top(cell + Vector2i(side, 0)):
+					var cap := pos + Vector2(0.0 if side < 0 else float(TILE), 5.0)
+					DrawKit.shape(self, DrawKit.circle(cap, 5.5, 14), top.lightened(0.15), top_dark, 1.2)
 		"stone":
 			draw_rect(Rect2(pos, Vector2(TILE, 6)), top)
 			draw_rect(Rect2(pos + Vector2(0, 6), Vector2(TILE, 2)), top_dark)

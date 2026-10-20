@@ -168,6 +168,24 @@ func _build_background(bounds: Rect2) -> void:
 	sky.stretch_mode = TextureRect.STRETCH_SCALE
 	sky_layer.add_child(sky)
 	add_child(sky_layer)
+	# Viñeteado: oscurece un poco los bordes de la pantalla para centrar la mirada
+	var vignette_layer := CanvasLayer.new()
+	vignette_layer.layer = 1
+	var vignette := TextureRect.new()
+	var radial := GradientTexture2D.new()
+	radial.gradient = Gradient.new()
+	radial.gradient.set_color(0, Color(0, 0, 0, 0))
+	radial.gradient.set_color(1, Color(0.05, 0.02, 0.1, 0.28))
+	radial.gradient.set_offset(0, 0.6)
+	radial.fill = GradientTexture2D.FILL_RADIAL
+	radial.fill_from = Vector2(0.5, 0.5)
+	radial.fill_to = Vector2(1.05, 0.5)
+	vignette.texture = radial
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vignette_layer.add_child(vignette)
+	add_child(vignette_layer)
 	var viewport_width := 1400.0
 	for layer_info in [[Scenery.Layer.FAR, 0.15], [Scenery.Layer.NEAR, 0.4], [Scenery.Layer.CLOUDS, 0.08]]:
 		var parallax := Parallax2D.new()

@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scenes/ui/hud_icon.gd" id="2_icon"]
 
 [node name="HUD" type="CanvasLayer"]
+layer = 5
 script = ExtResource("1_hud")
 
 [node name="Left" type="HBoxContainer" parent="."]

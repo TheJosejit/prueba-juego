@@ -15,6 +15,7 @@ func _ready() -> void:
 	super()
 	points = 250
 	squash_on_stomp = false
+	has_shadow = false
 	burst_color = WING
 	origin = position
 

@@ -46,16 +46,12 @@ static func draw_icon(ci: CanvasItem, kind: Kind, c: Vector2, s := 1.0) -> void:
 				ci.draw_rect(Rect2(c + Vector2(side * 7.0 - 2.5, -7) * s, Vector2(5, 3) * s), Color("dfe6ee"))
 
 
-## Semicírculo con contorno (cúpula del casco).
+## Cúpula del casco: degradado, contorno y brillos.
 static func draw_dome(ci: CanvasItem, base: Vector2, radius: float, color: Color) -> void:
-	var pts := PackedVector2Array()
+	var points := PackedVector2Array()
 	for i in 17:
 		var a := PI + PI * i / 16.0
-		pts.append(base + Vector2(cos(a), sin(a)) * radius)
-	var outline := PackedVector2Array()
-	for i in 17:
-		var a := PI + PI * i / 16.0
-		outline.append(base + Vector2(cos(a), sin(a)) * (radius + 1.5))
-	ci.draw_colored_polygon(outline, OUTLINE)
-	ci.draw_colored_polygon(pts, color)
-	ci.draw_circle(base + Vector2(-radius * 0.4, -radius * 0.55), radius * 0.2, color.lightened(0.5))
+		points.append(base + Vector2(cos(a), sin(a)) * radius)
+	DrawKit.shape(ci, points, color.lightened(0.3), color.darkened(0.15), 1.6)
+	ci.draw_arc(base, radius * 0.72, PI * 1.12, PI * 1.42, 8, Color(1, 1, 1, 0.45), radius * 0.12, true)
+	DrawKit.shine(ci, base + Vector2(-radius * 0.38, -radius * 0.58), Vector2(radius * 0.18, radius * 0.12), 0.85)

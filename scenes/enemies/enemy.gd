@@ -12,6 +12,7 @@ const OUTLINE := Color("1e1428")
 @export var points := 200
 var spiky := false # si es true, pisarlo hace daño al jugador
 var squash_on_stomp := true # false: al pisarlo sale despedido en vez de aplastarse
+var has_shadow := true # sombra de contacto en el suelo (los que vuelan no la tienen)
 var burst_color := Color.WHITE
 var direction := -1.0
 var active := false
@@ -121,9 +122,11 @@ func _reward(combo: int) -> void:
 func _draw() -> void:
 	if squashed:
 		_draw_squashed()
-	else:
-		draw_set_transform(Vector2.ZERO, 0.0, squash)
-		_draw_body()
+		return
+	if has_shadow and not knocked and is_on_floor():
+		DrawKit.contact_shadow(self, Vector2.ZERO, 14.0 * squash.x, 0.28)
+	draw_set_transform(Vector2.ZERO, 0.0, squash)
+	_draw_body()
 
 
 func _draw_body() -> void:
@@ -131,17 +134,19 @@ func _draw_body() -> void:
 
 
 func _draw_squashed() -> void:
-	draw_rect(Rect2(-16, -6, 32, 6), OUTLINE)
-	draw_rect(Rect2(-15, -5, 30, 4), burst_color)
+	var flat := DrawKit.rounded_rect(Rect2(-15, -5, 30, 5), 2.5)
+	DrawKit.shape(self, flat, burst_color.lightened(0.2), burst_color.darkened(0.2), 1.5)
 
 
 ## Ojos con contorno que miran hacia donde va el enemigo. angry = cejas fruncidas.
 func draw_eyes(center: Vector2, spacing: float, radius: float, angry := false) -> void:
 	for side in [-1.0, 1.0]:
 		var eye := center + Vector2(side * spacing, 0)
-		draw_circle(eye, radius + 1.0, OUTLINE)
-		draw_circle(eye, radius, Color.WHITE)
-		draw_circle(eye + Vector2(direction * radius * 0.4, radius * 0.15), radius * 0.55, OUTLINE)
+		draw_colored_polygon(DrawKit.ellipse(eye, Vector2(radius + 1.0, radius * 1.15 + 1.0), 16), OUTLINE)
+		draw_colored_polygon(DrawKit.ellipse(eye, Vector2(radius, radius * 1.15), 16), Color.WHITE)
+		var pupil := eye + Vector2(direction * radius * 0.4, radius * 0.15)
+		draw_circle(pupil, radius * 0.58, OUTLINE)
+		draw_circle(pupil + Vector2(-radius * 0.2, -radius * 0.25), radius * 0.2, Color.WHITE)
 		if angry:
 			var brow := eye + Vector2(0, -radius - 2.5)
 			draw_line(brow + Vector2(-side * 3.5, -1.5), brow + Vector2(side * 3.0, 1.5), OUTLINE, 2.0, true)
