@@ -17,6 +17,7 @@ const BLOCK_SCENE := preload("res://scenes/objects/block.tscn")
 const COIN_SCENE := preload("res://scenes/objects/coin.tscn")
 const SPIKES_SCENE := preload("res://scenes/objects/spikes.tscn")
 const GOAL_SCENE := preload("res://scenes/objects/goal.tscn")
+const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 
 
 func get_map() -> PackedStringArray:
@@ -26,6 +27,7 @@ func get_map() -> PackedStringArray:
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(SKY_COLOR)
 	Sfx.play_music()
+	add_child(PAUSE_MENU_SCENE.instantiate())
 	var map := get_map()
 	var map_size := Vector2i(0, map.size())
 	for row in map:
