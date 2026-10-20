@@ -3,7 +3,7 @@ extends CharacterBody2D
 ## Base de todos los enemigos. El origen del nodo está en su base.
 ## Cada enemigo hereda de aquí y define _move() (cómo se mueve) y _draw_body() (cómo se ve).
 ##   - Empieza a moverse cuando entra en pantalla.
-##   - stomp(): el jugador lo pisa.
+##   - stomp(combo): el jugador lo pisa. Pisar varios seguidos sin tocar el suelo da más puntos.
 ##   - knock_out(): lo golpean desde abajo (un bloque); sale despedido y cae.
 
 const GRAVITY := 1500.0
@@ -19,6 +19,8 @@ var dead := false
 var squashed := false
 var knocked := false
 var anim_time := 0.0
+var squash := Vector2.ONE
+var flash := 0.0 # destello blanco al recibir un golpe
 
 
 func _ready() -> void:
@@ -43,6 +45,10 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	anim_time += delta
+	squash = squash.lerp(Vector2.ONE, minf(delta * 10.0, 1.0))
+	flash = move_toward(flash, 0.0, delta * 5.0)
+	var bright := 1.0 + flash * 4.0
+	modulate = Color(bright, bright, bright)
 	queue_redraw()
 
 
@@ -58,31 +64,33 @@ func walk(delta: float, speed: float, turn_at_ledges := false) -> void:
 	if turn_at_ledges and is_on_floor() and not _ground_ahead():
 		direction = -direction
 		velocity.x = direction * speed
+		squash = Vector2(0.75, 1.2)
 	move_and_slide()
-	if is_on_wall():
+	if is_on_wall() and signf(get_wall_normal().x) != direction:
 		direction = signf(get_wall_normal().x)
+		squash = Vector2(0.75, 1.2)
 
 
 func _ground_ahead() -> bool:
 	return test_move(global_transform.translated(Vector2(direction * 14.0, 0)), Vector2(0, 8))
 
 
-func stomp() -> void:
+func stomp(combo := 1) -> void:
 	if dead:
 		return
 	if not squash_on_stomp:
-		knock_out()
+		knock_out(combo)
 		return
 	dead = true
 	squashed = true
 	velocity = Vector2.ZERO
 	$CollisionShape2D.set_deferred("disabled", true)
-	_reward()
+	_reward(combo)
 	await get_tree().create_timer(0.5, false).timeout
 	queue_free()
 
 
-func knock_out() -> void:
+func knock_out(combo := 1) -> void:
 	if dead:
 		return
 	dead = true
@@ -90,20 +98,31 @@ func knock_out() -> void:
 	velocity = Vector2(-direction * 60.0, -380.0)
 	z_index = 5
 	$CollisionShape2D.set_deferred("disabled", true)
-	_reward()
+	_reward(combo)
 
 
-func _reward() -> void:
-	Game.add_score(points)
-	Sfx.play("stomp", 0.1)
+## Puntos x1, x2, x4, x8 según el combo; con 5 seguidos, vida extra.
+func _reward(combo: int) -> void:
+	var multiplier := 1 << mini(combo - 1, 3)
+	Game.add_score(points * multiplier)
+	Sfx.play("stomp", 0.05, 1.0 + (combo - 1) * 0.12)
+	flash = 1.0
 	Fx.burst(self, global_position + Vector2(0, -10), burst_color, 12, 140.0)
-	Fx.popup(self, global_position + Vector2(0, -30), "+%d" % points)
+	Fx.ring(self, global_position + Vector2(0, -10), Color.WHITE, 26.0 + combo * 4.0)
+	if combo >= 5:
+		Game.add_life()
+		Fx.popup(self, global_position + Vector2(0, -34), "¡VIDA EXTRA!", Color("7dff9b"), 16)
+	elif combo >= 2:
+		Fx.popup(self, global_position + Vector2(0, -34), "+%d  x%d" % [points * multiplier, multiplier], Color("ffd23f"), 12 + combo * 2)
+	else:
+		Fx.popup(self, global_position + Vector2(0, -30), "+%d" % points)
 
 
 func _draw() -> void:
 	if squashed:
 		_draw_squashed()
 	else:
+		draw_set_transform(Vector2.ZERO, 0.0, squash)
 		_draw_body()
 
 

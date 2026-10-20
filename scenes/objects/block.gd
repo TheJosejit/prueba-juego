@@ -76,9 +76,11 @@ func _hit_things_on_top() -> void:
 		if not enemy.dead and absf(enemy.global_position.x - global_position.x) < 26.0 \
 				and absf(enemy.global_position.y - top) < 6.0:
 			enemy.knock_out()
+	Fx.ring(self, global_position + Vector2(0, -16), Color(1, 1, 1, 0.8), 22.0, 0.2)
 
 
 func _draw() -> void:
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0 + bump * 0.02, 1.0 - bump * 0.012)) # se deforma al rebotar
 	var o := Vector2(0, -bump)
 	var r := Rect2(o + Vector2(-16, -16), Vector2(32, 32))
 	if not is_bonus():

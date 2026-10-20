@@ -20,9 +20,21 @@ func _on_body_entered(body: Node2D) -> void:
 	reached = true
 	body.win()
 	create_tween().tween_property(self, "flag_y", -40.0, 0.8)
-	for color in [Color("ffd23f"), Color("2ec4b6"), Color("ff8c42"), Color("9b5de5")]:
-		Fx.burst(self, global_position + Vector2(0, -POLE_HEIGHT), color, 12, 220.0)
 	Game.level_complete()
+	_fireworks()
+
+
+## Fuegos artificiales de colores alrededor de la bandera.
+func _fireworks() -> void:
+	var colors := [Color("ffd23f"), Color("2ec4b6"), Color("ff8c42"), Color("9b5de5"), Color("ff4d6d")]
+	for i in 6:
+		var pos := global_position + Vector2(randf_range(-110, 110), -POLE_HEIGHT + randf_range(-60, 60))
+		var color: Color = colors[i % colors.size()]
+		Fx.burst(self, pos, color, 18, 200.0)
+		Fx.sparkle(self, pos, Color.WHITE, 6)
+		Fx.ring(self, pos, color, 40.0, 0.4)
+		Sfx.play("firework", 0.15)
+		await get_tree().create_timer(0.25, false).timeout
 
 
 func _process(_delta: float) -> void:

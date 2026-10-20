@@ -17,6 +17,7 @@ const TILE := 32
 const Terrain := preload("res://scenes/levels/terrain.gd")
 const Platforms := preload("res://scenes/levels/platforms.gd")
 const Lava := preload("res://scenes/levels/lava.gd")
+const Decor := preload("res://scenes/levels/decor.gd")
 const Scenery := preload("res://scenes/levels/scenery.gd")
 const MovingPlatform := preload("res://scenes/objects/moving_platform.gd")
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
@@ -101,6 +102,10 @@ func _ready() -> void:
 	terrain.build()
 	platforms.build()
 	lava.build()
+	var decor := Decor.new()
+	decor.theme = theme
+	decor.setup(terrain.cells)
+	add_child(decor)
 
 	if not player:
 		push_error("El mapa no tiene casilla 'P' de inicio del jugador.")
@@ -112,9 +117,11 @@ func _ready() -> void:
 			if checkpoint.position.distance_to(Game.checkpoint_pos) < 1.0:
 				checkpoint.set_active_silently()
 	player.set_level_bounds(bounds)
+	decor.player = player
+	_add_ambient_particles(player)
 
 	var hud := get_node_or_null("HUD")
-	if hud and level_index >= 0:
+	if hud and level_index >= 0 and Game.announce_level(level_index):
 		hud.flash("%d · %s" % [level_index + 1, Game.level_name(level_index)])
 
 
@@ -172,3 +179,59 @@ func _build_background(bounds: Rect2) -> void:
 		scenery.ground_y = bounds.end.y - 2 * TILE
 		parallax.add_child(scenery)
 		add_child(parallax)
+
+
+## Partículas que flotan por la pantalla según el tema: pétalos, polvo brillante, viento o ceniza.
+## Van pegadas a la cámara, pero cada partícula se queda en su sitio del mundo.
+func _add_ambient_particles(player: Node) -> void:
+	var p := CPUParticles2D.new()
+	p.texture = Fx.soft_texture()
+	p.local_coords = false
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = Vector2(420, 240)
+	p.amount = 40
+	p.lifetime = 8.0
+	p.preprocess = 8.0
+	p.z_index = 3
+	p.spread = 180.0
+	var fade := Gradient.new()
+	fade.set_color(0, Color(1, 1, 1, 0))
+	fade.set_color(1, Color(1, 1, 1, 0))
+	fade.add_point(0.2, Color.WHITE)
+	fade.add_point(0.8, Color.WHITE)
+	p.color_ramp = fade
+	match theme.style:
+		"grass": # pétalos que caen meciéndose
+			p.color = Color("ffd6e8")
+			p.gravity = Vector2(6, 10)
+			p.initial_velocity_min = 8.0
+			p.initial_velocity_max = 20.0
+			p.tangential_accel_min = -6.0
+			p.tangential_accel_max = 6.0
+			p.scale_amount_min = 0.2
+			p.scale_amount_max = 0.35
+		"stone": # motas brillantes que suben despacio
+			p.color = Color(theme.crystal, 0.8)
+			p.gravity = Vector2(0, -4)
+			p.initial_velocity_min = 2.0
+			p.initial_velocity_max = 8.0
+			p.scale_amount_min = 0.1
+			p.scale_amount_max = 0.25
+		"cloud": # ráfagas de viento
+			p.amount = 25
+			p.color = Color(1, 1, 1, 0.7)
+			p.direction = Vector2.LEFT
+			p.spread = 4.0
+			p.initial_velocity_min = 60.0
+			p.initial_velocity_max = 110.0
+			p.gravity = Vector2.ZERO
+			p.scale_amount_min = 0.12
+			p.scale_amount_max = 0.2
+		"rock": # ceniza
+			p.color = Color(0.6, 0.55, 0.55, 0.7)
+			p.gravity = Vector2(-4, 14)
+			p.initial_velocity_min = 4.0
+			p.initial_velocity_max = 12.0
+			p.scale_amount_min = 0.12
+			p.scale_amount_max = 0.3
+	player.camera.add_child(p)

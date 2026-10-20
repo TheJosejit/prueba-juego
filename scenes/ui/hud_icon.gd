@@ -9,11 +9,26 @@ var power: Powers.Kind = Powers.Kind.NONE:
 
 const OUTLINE := Color("1e1428")
 
+var _spin := 0.0
+
+
+## La moneda da una vuelta (al recoger una).
+func spin() -> void:
+	_spin = 0.4
+
+
+func _process(delta: float) -> void:
+	if _spin > 0.0:
+		_spin = maxf(_spin - delta, 0.0)
+		queue_redraw()
+
 
 func _draw() -> void:
 	var c := size / 2.0
 	match icon:
 		"coin":
+			draw_set_transform(c, 0.0, Vector2(maxf(absf(cos(_spin / 0.4 * TAU)), 0.15), 1.0))
+			c = Vector2.ZERO
 			draw_circle(c, 8.0, OUTLINE)
 			draw_circle(c, 6.5, Color("ffd23f"))
 			draw_rect(Rect2(c + Vector2(-1, -3.5), Vector2(2, 7)), Color("c98a00"))

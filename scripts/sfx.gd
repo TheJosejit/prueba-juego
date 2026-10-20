@@ -111,11 +111,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		AudioServer.set_bus_mute(0, not AudioServer.is_bus_mute(0))
 
 
-func play(sound: String, pitch_variation := 0.0) -> void:
+## pitch_variation: variación aleatoria del tono (0.05 = ±5 %). pitch: tono base (2.0 = una octava más agudo).
+func play(sound: String, pitch_variation := 0.0, pitch := 1.0) -> void:
 	var player := players[next_player]
 	next_player = (next_player + 1) % VOICES
 	player.stream = sounds[sound]
-	player.pitch_scale = 1.0 + randf_range(-pitch_variation, pitch_variation)
+	player.pitch_scale = pitch * (1.0 + randf_range(-pitch_variation, pitch_variation))
 	player.play()
 
 
@@ -380,6 +381,28 @@ func _build_sounds() -> void:
 	s = Synth.new(0.05)
 	s.note(0.0, 0.03, 900, 900, Synth.SQUARE, 0.15, {"duty": 0.125, "decay": 0.03, "sustain": 0.0, "lowpass": 4000.0})
 	sounds["ui_move"] = s.to_stream()
+
+	s = Synth.new(0.06)
+	s.note(0.0, 0.04, 3000, 3000, Synth.NOISE, 0.18, {"attack": 0.001, "decay": 0.04, "sustain": 0.0, "lowpass": 1600.0})
+	s.note(0.0, 0.03, 140, 110, Synth.TRIANGLE, 0.25, {"attack": 0.001, "decay": 0.03, "sustain": 0.0})
+	sounds["step"] = s.to_stream()
+
+	s = Synth.new(0.14)
+	s.note(0.0, 0.1, 2500, 2500, Synth.NOISE, 0.35, {"attack": 0.001, "decay": 0.1, "sustain": 0.0, "lowpass": 1200.0})
+	s.note(0.0, 0.09, 110, 55, Synth.TRIANGLE, 0.6, {"attack": 0.001, "decay": 0.09, "sustain": 0.0})
+	sounds["land"] = s.to_stream()
+
+	s = Synth.new(0.22)
+	s.note(0.0, 0.18, 5000, 5000, Synth.NOISE, 0.22, {"attack": 0.005, "decay": 0.17, "sustain": 0.0, "lowpass": 3500.0})
+	s.note(0.0, 0.16, 700, 500, Synth.SQUARE, 0.06, {"duty": 0.125, "decay": 0.15, "sustain": 0.0, "lowpass": 2500.0})
+	sounds["skid"] = s.to_stream()
+
+	s = Synth.new(0.5)
+	s.note(0.0, 0.08, 400, 1500, Synth.TRIANGLE, 0.25, {"attack": 0.001, "decay": 0.08, "sustain": 0.0})
+	s.note(0.06, 0.35, 3000, 3000, Synth.NOISE, 0.35, {"attack": 0.001, "decay": 0.34, "sustain": 0.0, "lowpass": 4000.0})
+	for k in 6:
+		s.note(0.12 + k * 0.045, 0.02, 9000, 9000, Synth.NOISE, 0.18, {"attack": 0.001, "decay": 0.02, "sustain": 0.0})
+	sounds["firework"] = s.to_stream()
 
 	s = Synth.new(0.15)
 	s.note(0.0, 0.05, 700, 700, Synth.SQUARE, 0.2, {"duty": 0.25, "sustain": 0.5, "lowpass": 5000.0})

@@ -41,7 +41,8 @@ func _on_body_entered(body: Node2D) -> void:
 func _draw() -> void:
 	var spin := cos(anim_time * 3.0)
 	var width := maxf(absf(spin), 0.12)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(width, 1.0))
+	var bob := sin(anim_time * 2.5 + position.x * 0.05) * 1.5 if not target else 0.0
+	draw_set_transform(Vector2(0, bob), 0.0, Vector2(width, 1.0))
 	draw_circle(Vector2.ZERO, 10.0, GOLD_DARK)
 	draw_circle(Vector2.ZERO, 8.5, GOLD)
 	draw_circle(Vector2(0, 0.5), 6.0, GOLD_DARK.lightened(0.3))

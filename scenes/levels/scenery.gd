@@ -16,7 +16,11 @@ var anim_time := 0.0
 
 func _ready() -> void:
 	var style: String = theme.style
-	set_process(layer == Layer.CLOUDS and style == "rock" or layer == Layer.NEAR and style == "stone")
+	var clouds: Color = theme.clouds
+	# Solo se redibujan cada fotograma las capas que se animan
+	var animated_clouds := layer == Layer.CLOUDS and (clouds.a > 0.0 or style == "rock")
+	var animated_near := layer == Layer.NEAR and style in ["stone", "grass"]
+	set_process(animated_clouds or animated_near)
 
 
 func _process(delta: float) -> void:
@@ -96,9 +100,10 @@ func _draw_near(rng: RandomNumberGenerator, style: String) -> void:
 				if rng.randf() < 0.6: # árbol
 					var tx := x + rng.randf_range(-radius * 0.5, radius * 0.5)
 					var ty := ground_y + 30 - sqrt(maxf(radius * radius - pow(tx - x, 2), 0.0))
+					var sway := sin(anim_time * 1.3 + tx * 0.02) * 2.0
 					draw_rect(Rect2(tx - 3, ty - 26, 6, 28), Color("6b4a2f"))
-					draw_circle(Vector2(tx, ty - 32), 15.0, near.darkened(0.15))
-					draw_circle(Vector2(tx - 6, ty - 38), 9.0, near.darkened(0.05))
+					draw_circle(Vector2(tx + sway, ty - 32), 15.0, near.darkened(0.15))
+					draw_circle(Vector2(tx - 6 + sway * 1.3, ty - 38), 9.0, near.darkened(0.05))
 				x += rng.randf_range(140, 260)
 				i += 1
 		"stone":
@@ -150,8 +155,9 @@ func _draw_clouds(rng: RandomNumberGenerator, style: String) -> void:
 	while x < width:
 		var y := rng.randf_range(20, 160)
 		var s := rng.randf_range(0.8, 1.6)
+		var cx := fmod(x + anim_time * 5.0 * s, width + 300.0) - 150.0 # se desplazan despacio
 		for puff in [Vector2(0, 0), Vector2(18, -10), Vector2(36, 0), Vector2(18, 6), Vector2(-14, 4)]:
-			draw_circle(Vector2(x, y) + puff * s, 16.0 * s, color)
+			draw_circle(Vector2(cx, y) + puff * s, 16.0 * s, color)
 		x += rng.randf_range(160, 320) * (0.6 if style == "cloud" else 1.0)
 	if style == "rock": # brasas que suben
 		for k in 40:

@@ -1,6 +1,7 @@
 extends StaticBody2D
 ## Suelo del nivel (las casillas "#" del mapa): colisiones y dibujo según el tema del nivel.
 ## Estilos: "grass" (hierba), "stone" (piedra), "cloud" (nube) y "rock" (roca volcánica).
+## Los detalles animados (hierba, flores, cristales, grietas) están en decor.gd.
 
 const TILE := 32
 
@@ -71,11 +72,6 @@ func _draw() -> void:
 				# Motas en la tierra o la roca
 				draw_rect(Rect2(pos + Vector2(4 + h % 20, 14 + h % 13), Vector2(5, 3)), fill.darkened(0.2))
 				draw_rect(Rect2(pos + Vector2(4 + (h >> 4) % 20, 4 + (h >> 3) % 10), Vector2(3, 3)), fill.lightened(0.12))
-				if style == "rock" and h % 5 == 0:
-					var glow: Color = theme.lava
-					draw_polyline(PackedVector2Array([
-						pos + Vector2(6, 26), pos + Vector2(12, 20), pos + Vector2(18, 23), pos + Vector2(25, 16),
-					]), Color(glow, 0.8), 1.5, true)
 		# Laterales y parte inferior expuestos: más oscuros, para que los bloques se lean bien
 		if not cells.has(cell + Vector2i.LEFT):
 			draw_rect(Rect2(pos, Vector2(3, TILE)), fill.darkened(0.3))
@@ -87,7 +83,7 @@ func _draw() -> void:
 			_draw_top(pos, h, style)
 
 
-func _draw_top(pos: Vector2, h: int, style: String) -> void:
+func _draw_top(pos: Vector2, _h: int, style: String) -> void:
 	var top: Color = theme.top
 	var top_dark: Color = theme.top_dark
 	match style:
@@ -95,23 +91,10 @@ func _draw_top(pos: Vector2, h: int, style: String) -> void:
 			draw_rect(Rect2(pos, Vector2(TILE, 10)), top)
 			draw_rect(Rect2(pos + Vector2(0, 10), Vector2(TILE, 3)), top_dark)
 			draw_rect(Rect2(pos, Vector2(TILE, 2)), top.lightened(0.25))
-			for i in 4: # briznas de hierba
-				var x := pos.x + 3.0 + i * 8.0 + (h >> i) % 3
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(x - 2, pos.y + 1), Vector2(x, pos.y - 4 - (h >> (i + 2)) % 3), Vector2(x + 2, pos.y + 1),
-				]), top)
-			if h % 7 == 0: # alguna flor
-				var flower := pos + Vector2(10 + h % 12, -3)
-				var petal: Color = [Color("ffffff"), Color("ffd23f"), Color("ff7eb6")][h % 3]
-				draw_circle(flower, 2.5, petal)
-				draw_circle(flower, 1.0, Color("ff9f1c"))
 		"stone":
 			draw_rect(Rect2(pos, Vector2(TILE, 6)), top)
 			draw_rect(Rect2(pos + Vector2(0, 6), Vector2(TILE, 2)), top_dark)
 			draw_rect(Rect2(pos, Vector2(TILE, 1.5)), top.lightened(0.3))
-			if h % 6 == 0 and theme.has("crystal"): # cristal brillante
-				var c := pos + Vector2(8 + h % 16, 0)
-				draw_colored_polygon(PackedVector2Array([c + Vector2(-3, 0), c + Vector2(0, -9), c + Vector2(3, 0)]), theme.crystal)
 		"cloud":
 			for i in 3:
 				draw_circle(pos + Vector2(5 + i * 11, 4), 8.0, top)

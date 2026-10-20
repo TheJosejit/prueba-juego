@@ -9,6 +9,7 @@ var kind: Powers.Kind = Powers.Kind.HELMET
 var direction := 1.0
 var emerging := true
 var anim_time := 0.0
+var sparkle_timer := 0.0
 
 
 func _ready() -> void:
@@ -37,6 +38,10 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	anim_time += delta
+	sparkle_timer -= delta
+	if sparkle_timer <= 0.0 and not emerging:
+		sparkle_timer = 0.15
+		Fx.sparkle(self, global_position + Vector2(randf_range(-8, 8), -14), Color("fff1a8"), 2)
 	queue_redraw()
 
 

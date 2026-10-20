@@ -26,6 +26,9 @@ var power: Powers.Kind = Powers.Kind.NONE
 var checkpoint_level := -1
 var checkpoint_pos := Vector2.ZERO
 var unlocked_levels := 1 # cuántos niveles se pueden elegir en el menú
+var announced_level := -1 # para mostrar el nombre del nivel solo al entrar, no al reaparecer
+var coin_streak := 0 # monedas seguidas: cada una suena un poco más aguda
+var _last_coin_time := 0.0
 
 
 func _ready() -> void:
@@ -43,6 +46,7 @@ func reset() -> void:
 	lives = START_LIVES
 	current_level = 0
 	power = Powers.Kind.NONE
+	announced_level = -1
 	clear_checkpoint()
 	stats_changed.emit()
 
@@ -55,7 +59,10 @@ func add_score(points: int) -> void:
 func add_coin() -> void:
 	coins += 1
 	score += 100
-	Sfx.play("coin", 0.03)
+	var now := Time.get_ticks_msec() / 1000.0
+	coin_streak = mini(coin_streak + 1, 12) if now - _last_coin_time < 0.7 else 0
+	_last_coin_time = now
+	Sfx.play("coin", 0.0, pow(2.0, coin_streak / 12.0 * 0.5)) # sube hasta media octava
 	if coins >= COINS_PER_LIFE:
 		coins -= COINS_PER_LIFE
 		lives += 1
@@ -63,6 +70,27 @@ func add_coin() -> void:
 		message.emit("¡VIDA EXTRA!")
 		get_tree().create_timer(1.5, false).timeout.connect(func() -> void: message.emit(""))
 	stats_changed.emit()
+
+
+func add_life() -> void:
+	lives += 1
+	Sfx.play("one_up")
+	stats_changed.emit()
+
+
+## Congela el juego un instante (da sensación de impacto). scale = velocidad durante la pausa.
+func hitstop(duration: float, scale := 0.05) -> void:
+	Engine.time_scale = scale
+	await get_tree().create_timer(duration, true, false, true).timeout
+	Engine.time_scale = 1.0
+
+
+## Devuelve true la primera vez que se entra en un nivel (para mostrar su nombre).
+func announce_level(index: int) -> bool:
+	if index == announced_level:
+		return false
+	announced_level = index
+	return true
 
 
 func set_power(kind: Powers.Kind) -> void:
@@ -109,7 +137,7 @@ func player_died() -> void:
 		reset()
 		go_to_menu()
 	else:
-		get_tree().reload_current_scene()
+		Transition.change_scene()
 
 
 func level_complete() -> void:
@@ -146,8 +174,7 @@ func start_level(index: int) -> void:
 
 func restart_level() -> void:
 	clear_checkpoint()
-	get_tree().paused = false
-	get_tree().reload_current_scene()
+	Transition.change_scene()
 
 
 func continue_game() -> void:
@@ -217,8 +244,7 @@ func _load_progress() -> void:
 
 
 func _change_scene(path: String) -> void:
-	get_tree().paused = false
-	get_tree().change_scene_to_file(path)
+	Transition.change_scene(path)
 
 
 # Las acciones se crean por código para no tener que tocar el mapa de entrada del proyecto.
