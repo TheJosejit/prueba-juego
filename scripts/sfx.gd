@@ -32,10 +32,12 @@ func _ready() -> void:
 	for i in VOICES:
 		var player := AudioStreamPlayer.new()
 		player.volume_db = -8.0
+		player.bus = &"SFX"
 		add_child(player)
 		players.append(player)
 	music_player = AudioStreamPlayer.new()
 	music_player.volume_db = -16.0
+	music_player.bus = &"Music"
 	add_child(music_player)
 	_build_sounds()
 	music_player.stream = _build_music()

@@ -11,19 +11,23 @@ Plataformas 2D: lleva a **Pip** hasta la bandera de meta. Recoge monedas (50 = v
 | Moverse | A / D o ← / → | Cruceta o stick |
 | Saltar (mantener = más alto) | Espacio, W o ↑ | A |
 | Correr | Shift o J | X |
+| Pausa (guardar partida, opciones) | Esc o P | Start |
 | Silenciar / activar sonido | M | |
+
+**Guardar partida:** desde el menú de pausa se guardan el nivel, los puntos, las monedas y las vidas; también se guarda solo al pasar de nivel. Al continuar se empieza desde el principio del nivel guardado. Las opciones (volumen de música y efectos, pantalla completa, temblor de cámara) se guardan solas. Ambos archivos están en la carpeta de datos de Godot (`%APPDATA%\Godot\app_userdata\PruebaJuego` en Windows).
 
 ## Estructura
 
 ```
-scripts/game.gd          Autoload "Game": puntos, monedas, vidas y controles
+scripts/game.gd          Autoload "Game": puntos, monedas, vidas, lista de niveles, guardado y controles
+scripts/settings.gd      Autoload "Settings": opciones del jugador
 scripts/sfx.gd           Autoload "Sfx": sonidos y música (sintetizados por código)
 scripts/fx.gd            Clase "Fx": partículas y textos flotantes
 scenes/player/           Pip (movimiento, salto, muerte)
 scenes/enemies/          Blob
 scenes/objects/          Bloques, monedas, pinchos y bandera de meta
 scenes/levels/           Construcción de niveles, suelo, fondo y level_1
-scenes/ui/               Marcador (HUD)
+scenes/ui/               Marcador (HUD), menú principal, menú de pausa y opciones
 ```
 
 Los gráficos se dibujan por código (`_draw()`), así que no hacen falta imágenes. Si añadís sprites, sustituid el `_draw()` de cada escena.
@@ -45,7 +49,7 @@ Los niveles son mapas de texto. Abre [level_1.gd](scenes/levels/level_1.gd) y ca
 | `P` | Inicio del jugador |
 | `F` | Bandera de meta |
 
-Para crear un nivel nuevo, duplica `level_1.gd` y `level_1.tscn`, cambia el mapa y haz que el `.tscn` nuevo use el script nuevo.
+Para crear un nivel nuevo, duplica `level_1.gd` y `level_1.tscn`, cambia el mapa y haz que el `.tscn` nuevo use el script nuevo. Después añade la ruta del `.tscn` a la lista `LEVELS` de [game.gd](scripts/game.gd): al completar un nivel se pasa al siguiente de la lista.
 
 ### Capas de colisión
 

@@ -109,7 +109,8 @@ func _process(delta: float) -> void:
 	anim_time += delta
 	squash = squash.lerp(Vector2.ONE, minf(delta * 12.0, 1.0))
 	shake = move_toward(shake, 0.0, delta * 20.0)
-	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake
+	if Settings.screen_shake:
+		camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake
 	queue_redraw()
 
 
@@ -138,7 +139,7 @@ func die() -> void:
 	Fx.burst(self, global_position + Vector2(0, -14), BODY_COLOR, 14, 160.0)
 	$CollisionShape2D.set_deferred("disabled", true)
 	hurtbox.set_deferred("monitoring", false)
-	await get_tree().create_timer(1.2).timeout
+	await get_tree().create_timer(1.2, false).timeout
 	Game.player_died()
 
 
