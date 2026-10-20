@@ -24,6 +24,7 @@ Recoge monedas (50 = vida extra), pisa a los enemigos y llega a la meta. Al comp
 | Correr | Shift o J | X |
 | Pausa (guardar, reiniciar, opciones) | Esc o P | Start |
 | Silenciar / activar sonido | M | |
+| Pantalla completa / ventana | F11 o Alt+Enter | |
 
 ### Mejoras (poderes)
 

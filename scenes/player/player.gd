@@ -52,6 +52,13 @@ var invincible := 0.0
 var stomp_combo := 0 # enemigos pisados seguidos sin tocar el suelo
 var death_camera_pos := Vector2.ZERO
 var shake := 0.0
+# Modo demo (menú principal): Pip se mueve solo, sin cámara ni sonidos
+var demo := false
+var demo_dir := 1.0
+var demo_run := false
+var demo_jump_pressed := false # se pone a true un fotograma para saltar
+var demo_jump_hold := 0.0 # segundos que "mantiene" el salto
+var _jump_cut_done := false
 # Animación
 var squash := Vector2.ONE
 var flip := 1.0 # va de -1 a 1 al girar (Pip "se da la vuelta" en vez de cambiar de golpe)
@@ -94,6 +101,8 @@ func _physics_process(delta: float) -> void:
 			_check_overlaps() # por si sigue tocando a un enemigo o unos pinchos
 
 	var on_floor := is_on_floor()
+	if demo:
+		demo_jump_hold = maxf(demo_jump_hold - delta, 0.0)
 	_move_horizontal(delta, on_floor)
 	_apply_gravity(delta, on_floor)
 	_handle_jump(on_floor)
@@ -124,14 +133,15 @@ func _physics_process(delta: float) -> void:
 	var look := facing * LOOK_AHEAD * clampf(absf(velocity.x) / RUN_SPEED, 0.0, 1.0)
 	camera.position.x = move_toward(camera.position.x, look, 90.0 * delta)
 
-	position.x = maxf(position.x, 10.0)
+	if not demo:
+		position.x = maxf(position.x, 10.0)
 	if position.y > fall_limit:
 		die()
 
 
 func _move_horizontal(delta: float, on_floor: bool) -> void:
-	var dir := 0.0 if finished else Input.get_axis("move_left", "move_right")
-	var speed := RUN_SPEED if Input.is_action_pressed("run") else WALK_SPEED
+	var dir := 0.0 if finished else _input_dir()
+	var speed := RUN_SPEED if _run_held() else WALK_SPEED
 	if dir == 0.0:
 		skidding = false
 		velocity.x = move_toward(velocity.x, 0.0, (FRICTION if on_floor else AIR_ACCEL * 0.5) * delta)
@@ -142,7 +152,7 @@ func _move_horizontal(delta: float, on_floor: bool) -> void:
 		accel = TURN_ACCEL if on_floor else AIR_ACCEL * 1.6
 		if on_floor and absf(velocity.x) > SKID_SPEED and not skidding:
 			skidding = true
-			Sfx.play("skid", 0.05)
+			_sfx("skid", 0.05)
 			Fx.dust(self, global_position + Vector2(facing * 6.0, 0), 7)
 	else:
 		skidding = false
@@ -152,11 +162,11 @@ func _move_horizontal(delta: float, on_floor: bool) -> void:
 
 func _apply_gravity(delta: float, on_floor: bool) -> void:
 	gliding = power == Powers.Kind.FEATHER and not on_floor and velocity.y > 0.0 \
-			and Input.is_action_pressed("jump") and not finished
+			and _jump_held() and not finished
 	var gravity := GRAVITY
 	if velocity.y > 0.0:
 		gravity *= FALL_GRAVITY
-	elif absf(velocity.y) < APEX_SPEED and Input.is_action_pressed("jump"):
+	elif absf(velocity.y) < APEX_SPEED and _jump_held():
 		gravity *= APEX_GRAVITY
 	velocity.y += gravity * delta
 	var max_fall := GLIDE_FALL_SPEED if gliding else MAX_FALL_SPEED
@@ -170,19 +180,48 @@ func _handle_jump(on_floor: bool) -> void:
 		spring_launch = false
 		stomp_combo = 0
 	coyote = COYOTE_TIME if on_floor else coyote - get_physics_process_delta_time()
-	var jump_pressed := Input.is_action_just_pressed("jump") and not finished
+	var jump_pressed := _jump_just_pressed() and not finished
 	jump_buffer = JUMP_BUFFER if jump_pressed else jump_buffer - get_physics_process_delta_time()
 	if jump_buffer > 0.0 and coyote > 0.0:
 		_jump(JUMP_VELOCITY)
 	elif jump_pressed and air_jumps > 0:
 		air_jumps -= 1
 		_jump(AIR_JUMP_VELOCITY, true)
-	if Input.is_action_just_released("jump") and velocity.y < 0.0 and not spring_launch:
+	if not _jump_held() and velocity.y < 0.0 and not spring_launch and not _jump_cut_done:
 		velocity.y *= JUMP_CUT
+		_jump_cut_done = true
+
+
+# --- Entrada (teclado/mando, o el modo demo del menú) ---
+
+func _input_dir() -> float:
+	return demo_dir if demo else Input.get_axis("move_left", "move_right")
+
+
+func _run_held() -> bool:
+	return demo_run if demo else Input.is_action_pressed("run")
+
+
+func _jump_just_pressed() -> bool:
+	if demo:
+		var pressed := demo_jump_pressed
+		demo_jump_pressed = false
+		return pressed
+	return Input.is_action_just_pressed("jump")
+
+
+func _jump_held() -> bool:
+	return demo_jump_hold > 0.0 if demo else Input.is_action_pressed("jump")
+
+
+func _sfx(sound: String, pitch_variation := 0.0, pitch := 1.0) -> void:
+	if not demo:
+		Sfx.play(sound, pitch_variation, pitch)
 
 
 func _jump(jump_velocity: float, in_air := false) -> void:
 	velocity.y = jump_velocity
+	_jump_cut_done = false
 	jump_buffer = 0.0
 	coyote = 0.0
 	spring_launch = false
@@ -190,11 +229,11 @@ func _jump(jump_velocity: float, in_air := false) -> void:
 	squash = Vector2(0.7, 1.3)
 	idle_time = 0.0
 	if in_air:
-		Sfx.play("double_jump", 0.05)
+		_sfx("double_jump", 0.05)
 		Fx.burst(self, global_position, Color.WHITE, 8, 90.0)
 		Fx.ring(self, global_position + Vector2(0, -4), Color.WHITE, 22.0)
 	else:
-		Sfx.play("jump", 0.05)
+		_sfx("jump", 0.05)
 		Fx.dust(self, global_position)
 
 
@@ -203,7 +242,7 @@ func _land(impact: float) -> void:
 	squash = Vector2(1.0 + 0.4 * k, 1.0 - 0.35 * k)
 	Fx.dust(self, global_position, 4 + int(10.0 * k))
 	if k > 0.35:
-		Sfx.play("land", 0.08, 1.2 - k * 0.3)
+		_sfx("land", 0.08, 1.2 - k * 0.3)
 	if k > 0.95:
 		shake = maxf(shake, 3.0)
 
@@ -219,7 +258,7 @@ func _trail_effects(delta: float) -> void:
 	if on_floor and absf(velocity.x) > 40.0:
 		var s := sin(anim_time * (22.0 if running else 16.0))
 		if signf(s) != signf(step_phase):
-			Sfx.play("step", 0.15, 1.0 if running else 0.85)
+			_sfx("step", 0.15, 1.0 if running else 0.85)
 		step_phase = s
 	ghost_timer -= delta
 	if ghost_timer <= 0.0 and (absf(velocity.x) > RUN_SPEED * 0.92 or spring_launch):
@@ -266,7 +305,8 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 	if landed_on_top and not body.spiky:
 		stomp_combo += 1
 		body.stomp(stomp_combo)
-		velocity.y = JUMP_VELOCITY if Input.is_action_pressed("jump") else STOMP_BOUNCE
+		velocity.y = JUMP_VELOCITY if _jump_held() else STOMP_BOUNCE
+		_jump_cut_done = not _jump_held() # el rebote sin mantener el salto no se corta
 		air_jumps = 1 if power == Powers.Kind.FEATHER else 0
 		squash = Vector2(1.3, 0.75)
 		shake = 3.0 + stomp_combo
@@ -287,7 +327,7 @@ func _check_overlaps() -> void:
 
 func give_power(kind: Powers.Kind) -> void:
 	_set_power(kind)
-	Sfx.play("power_up")
+	_sfx("power_up")
 	Game.add_score(500)
 	Fx.burst(self, global_position + Vector2(0, -14), Color("ffd23f"), 16, 180.0)
 	Fx.sparkle(self, global_position + Vector2(0, -16), Color("fff1a8"), 12)
@@ -313,9 +353,10 @@ func hurt() -> void:
 	_set_power(Powers.Kind.NONE)
 	invincible = INVINCIBLE_TIME
 	velocity = Vector2(-facing * 180.0, -320.0)
+	_jump_cut_done = true
 	shake = 6.0
 	squash = Vector2(1.3, 0.7)
-	Sfx.play("power_down")
+	_sfx("power_down")
 	Fx.burst(self, global_position + Vector2(0, -16), Color.WHITE, 12, 150.0)
 	Fx.ring(self, global_position + Vector2(0, -16), Color("ff4d6d"), 36.0)
 	Game.hitstop(0.12)
@@ -346,7 +387,7 @@ func die() -> void:
 	velocity = Vector2(0.0, -450.0)
 	shake = 8.0
 	Sfx.stop_music()
-	Sfx.play("die")
+	_sfx("die")
 	Fx.burst(self, global_position + Vector2(0, -14), BODY_COLOR, 14, 160.0)
 	Fx.ring(self, global_position + Vector2(0, -14), Color.WHITE, 48.0, 0.4)
 	$CollisionShape2D.set_deferred("disabled", true)
@@ -361,6 +402,7 @@ func win() -> void:
 	invincible = 0.0
 	if is_on_floor():
 		velocity.y = -380.0 # saltito de alegría
+		_jump_cut_done = true
 	var tween := create_tween()
 	tween.tween_property(camera, "zoom", Vector2(1.15, 1.15), 1.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
