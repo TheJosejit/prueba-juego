@@ -5,7 +5,7 @@ Proyecto de Godot **4.7** (Forward Plus, Jolt Physics). Todo el equipo debe usar
 ## Empezar
 
 ```bash
-git clone https://github.com/USUARIO/prueba-juego.git
+git clone https://github.com/TheJosejit/prueba-juego.git
 ```
 
 Abre la carpeta desde Godot (Importar → `project.godot`).
