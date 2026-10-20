@@ -1,17 +1,30 @@
 extends Node
 ## Autoload "Settings": opciones del jugador. Se guardan en user://settings.cfg.
+## F11 o Alt+Enter cambian entre pantalla completa y ventana en cualquier momento.
 
 const PATH := "user://settings.cfg"
 
 var music_volume := 0.8
 var sfx_volume := 0.8
-var fullscreen := false
+var fullscreen := true # pantalla completa sin bordes (en el monitor actual)
 var screen_shake := true
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	load_settings()
 	apply()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var alt_enter: bool = event.physical_keycode == KEY_ENTER and event.alt_pressed
+		var toggle: bool = event.physical_keycode == KEY_F11 or alt_enter
+		if toggle:
+			fullscreen = not fullscreen
+			apply()
+			save_settings()
+			get_viewport().set_input_as_handled()
 
 
 func load_settings() -> void:

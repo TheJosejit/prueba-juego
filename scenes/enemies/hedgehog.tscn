@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/enemies/hedgehog.gd" id="1_hedgehog"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hedgehog"]
+size = Vector2(24, 18)
+
+[node name="Hedgehog" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_hedgehog")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -9)
+shape = SubResource("RectangleShape2D_hedgehog")

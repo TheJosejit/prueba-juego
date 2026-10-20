@@ -1,70 +1,43 @@
-extends CharacterBody2D
-## Blob: camina en línea recta, se da la vuelta al chocar con una pared y muere si lo pisan.
-## El origen del nodo está en su base.
+extends Enemy
+## Blob: camina en línea recta y se da la vuelta al chocar con una pared. Se puede pisar.
 
 const SPEED := 50.0
-const GRAVITY := 1500.0
 const COLOR := Color("9b5de5")
 const COLOR_DARK := Color("6a31b5")
-
-var direction := -1.0
-var active := false # empieza a moverse cuando entra en pantalla
-var dead := false
-var anim_time := 0.0
+const COLOR_LIGHT := Color("c49bff")
 
 
 func _ready() -> void:
-	var notifier := VisibleOnScreenNotifier2D.new()
-	notifier.rect = Rect2(-16, -24, 32, 24)
-	notifier.screen_entered.connect(func() -> void: active = true)
-	add_child(notifier)
+	super()
+	burst_color = COLOR
 
 
-func _physics_process(delta: float) -> void:
-	if not active or dead:
-		return
-	velocity.x = direction * SPEED
-	velocity.y = minf(velocity.y + GRAVITY * delta, 700.0)
-	move_and_slide()
-	if is_on_wall():
-		direction = signf(get_wall_normal().x)
-	if position.y > 2000.0:
-		queue_free()
+func _move(delta: float) -> void:
+	walk(delta, SPEED)
 
 
-func _process(delta: float) -> void:
-	anim_time += delta
-	queue_redraw()
-
-
-func stomp() -> void:
-	if dead:
-		return
-	dead = true
-	$CollisionShape2D.set_deferred("disabled", true)
-	Game.add_score(200)
-	Sfx.play("stomp", 0.1)
-	Fx.burst(self, global_position + Vector2(0, -8), COLOR, 12, 140.0)
-	Fx.popup(self, global_position + Vector2(0, -28), "+200")
-	await get_tree().create_timer(0.5, false).timeout
-	queue_free()
-
-
-func _draw() -> void:
-	if dead:
-		draw_rect(Rect2(-15, -5, 30, 5), COLOR_DARK)
-		return
+func _draw_body() -> void:
 	var wobble := sin(anim_time * 10.0) * 1.5 if active else 0.0
+	var w := 14.0 + wobble
+	var h := 19.0 - wobble
+	DrawKit.shape(self, _dome(w, h), COLOR_LIGHT, COLOR_DARK, 2.0)
+	# Burbujas dentro de la gelatina
+	for k in 3:
+		var bubble := Vector2(sin(anim_time * 1.3 + k * 2.1) * w * 0.4, -h * (0.25 + 0.15 * k))
+		draw_circle(bubble, 1.4 + k * 0.4, Color(1, 1, 1, 0.22))
+	# Brillo
+	DrawKit.shine(self, Vector2(-w * 0.45, -h * 0.68), Vector2(3.2, 2.2), 0.7)
+	draw_circle(Vector2(-w * 0.18, -h * 0.84), 1.3, Color.WHITE)
+	draw_eyes(Vector2(direction * 3.0, -10.5), 4.6, 3.4, true)
+	# Boca con un colmillo
+	var mouth := Vector2(direction * 3.0, -4.5)
+	draw_arc(mouth, 2.6, PI + 0.5, TAU - 0.5, 8, OUTLINE, 1.4, true)
+	draw_colored_polygon(PackedVector2Array([mouth + Vector2(1.0, -1.6), mouth + Vector2(2.4, -1.2), mouth + Vector2(1.7, 0.4)]), Color.WHITE)
+
+
+func _dome(w: float, h: float) -> PackedVector2Array:
 	var points := PackedVector2Array()
-	for i in 17:
-		var angle := PI + PI * i / 16.0
-		points.append(Vector2(cos(angle) * (14.0 + wobble), sin(angle) * (19.0 - wobble)))
-	draw_colored_polygon(points, COLOR)
-	draw_rect(Rect2(-14 - wobble, -3, 28 + wobble * 2.0, 3), COLOR_DARK)
-	for side in [-1.0, 1.0]:
-		var eye := Vector2(direction * 3.0 + side * 4.5, -11)
-		draw_circle(eye, 3.5, Color.WHITE)
-		draw_circle(eye + Vector2(direction * 1.3, 0.5), 1.8, Color.BLACK)
-	# Cejas enfadadas
-	draw_line(Vector2(direction * 3.0 - 8, -17), Vector2(direction * 3.0 - 2, -15), Color.BLACK, 1.5)
-	draw_line(Vector2(direction * 3.0 + 8, -17), Vector2(direction * 3.0 + 2, -15), Color.BLACK, 1.5)
+	for i in 21:
+		var angle := PI + PI * i / 20.0
+		points.append(Vector2(cos(angle) * w, sin(angle) * h))
+	return points

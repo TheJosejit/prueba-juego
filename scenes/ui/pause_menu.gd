@@ -5,6 +5,7 @@ extends CanvasLayer
 @onready var dim: Control = $Dim
 @onready var resume_button: Button = %ResumeButton
 @onready var save_button: Button = %SaveButton
+@onready var restart_button: Button = %RestartButton
 @onready var options_button: Button = %OptionsButton
 @onready var menu_button: Button = %MenuButton
 @onready var status: Label = %Status
@@ -15,9 +16,11 @@ func _ready() -> void:
 	_set_open(false)
 	resume_button.pressed.connect(resume)
 	save_button.pressed.connect(_on_save_pressed)
+	restart_button.pressed.connect(Game.restart_level)
 	options_button.pressed.connect(_on_options_pressed)
 	menu_button.pressed.connect(Game.go_to_menu)
 	options.closed.connect(_on_options_closed)
+	Sfx.wire_ui(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -32,6 +35,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func open() -> void:
 	status.text = ""
+	Sfx.play("pause")
 	_set_open(true)
 	get_tree().paused = true
 	resume_button.grab_focus()
