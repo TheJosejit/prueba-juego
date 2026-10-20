@@ -27,13 +27,15 @@ const MAGNET_RADIUS := 130.0
 const LOOK_AHEAD := 56.0 # la cámara se adelanta hacia donde corre Pip
 const SLEEP_TIME := 6.0 # segundos quieto hasta que se duerme
 
-const OUTLINE := Color("2a1a14")
-const METAL := Color("d9e4f0")
-const ACCENT := Color("4aa8f0") # azul de las botas y el panel
-const LED := Color("7ef0ff") # ojos y boca
+const OUTLINE := Color("1c1a22")
+const PEARL := Color("f4f2ee") # blanco perla del cuerpo
+const METAL := Color("b9bec8") # gris cálido (sombras, manos, antena)
+const ACCENT := Color("3d5a80") # azul pizarra de las botas y la franja
+const ACCENT_WARM := Color("f28c28") # luz de estado del pecho
+const LED := Color("8ff3ff") # ojos y boca
 const LED_HURT := Color("ff6b74")
-const ANTENNA_LIGHT := Color("ff6b74")
-const BODY_COLOR := Color("9fd8ff") # color de la estela y de las partículas al morir
+const ANTENNA_LIGHT := Color("ffb347")
+const BODY_COLOR := Color("bcd4ea") # color de la estela y de las partículas al morir
 
 var facing := 1.0
 var dead := false
@@ -476,8 +478,8 @@ func _draw_body(origin: Vector2, f: float) -> void:
 
 	# Manos: se balancean al andar, arriba al saltar
 	var swing := sin(cycle) * 4.0 if walking else 0.0
-	var back_hand := body + Vector2(-f * 12.5 - f * swing * 0.5, -12 + swing * 0.3)
-	var front_hand := body + Vector2(f * 12.5 + f * swing * 0.5, -12 - swing * 0.3)
+	var back_hand := body + Vector2(-f * 11.5 - f * swing * 0.5, -12 + swing * 0.3)
+	var front_hand := body + Vector2(f * 11.5 + f * swing * 0.5, -12 - swing * 0.3)
 	if not on_floor and not dead:
 		var up := 4.0 if velocity.y < 0.0 else 0.0
 		back_hand = body + Vector2(-f * 14.0, -23 - up)
@@ -487,30 +489,41 @@ func _draw_body(origin: Vector2, f: float) -> void:
 		front_hand = body + Vector2(f * 14.0, -17)
 	_draw_hand(back_hand)
 
-	# Botas
-	for foot in [Vector2(-5.5, -maxf(step, 0.0)), Vector2(5.5, -maxf(-step, 0.0))]:
-		var boot := DrawKit.rounded_rect(Rect2(origin + foot + Vector2(-4.0 + f, -6.0), Vector2(8, 6)), 2.0)
-		DrawKit.shape(self, boot, ACCENT.lightened(0.25), ACCENT.darkened(0.3), 1.5)
-		draw_line(origin + foot + Vector2(-2.5 + f, -4.8), origin + foot + Vector2(1.5 + f, -4.8), Color(1, 1, 1, 0.45), 1.0)
+	# Botas estilizadas con suela oscura
+	for foot in [Vector2(-5.0, -maxf(step, 0.0)), Vector2(5.0, -maxf(-step, 0.0))]:
+		var boot_pos: Vector2 = origin + foot
+		var boot := DrawKit.rounded_rect(Rect2(boot_pos + Vector2(-4.2 + f, -5.6), Vector2(8.4, 5.6)), 2.5, 1.2)
+		DrawKit.shape(self, boot, ACCENT.lightened(0.2), ACCENT.darkened(0.25), 1.4)
+		draw_rect(Rect2(boot_pos + Vector2(-3.6 + f, -1.4), Vector2(7.2, 1.2)), Color(OUTLINE, 0.7))
+		draw_line(boot_pos + Vector2(-2.6 + f, -4.6), boot_pos + Vector2(1.2 + f, -4.6), Color(1, 1, 1, 0.35), 0.9)
 
-	# Cuerpo metálico
-	var shape := DrawKit.rounded_rect(Rect2(body + Vector2(-12, -31), Vector2(24, 26)), 7.0)
-	DrawKit.shape(self, shape, Color.WHITE, METAL.darkened(0.22), 2.0)
-	draw_line(body + Vector2(-12, -14.5), body + Vector2(12, -14.5), Color(METAL.darkened(0.3), 0.7), 1.0) # junta
-	DrawKit.shine(self, body + Vector2(-7.5, -27), Vector2(2.6, 1.6), 0.85)
-	# Panel del pecho con lucecitas
-	var panel := body + Vector2(f * 1.5, -9.5)
-	DrawKit.shape(self, DrawKit.rounded_rect(Rect2(panel + Vector2(-4, -2.5), Vector2(8, 5)), 1.5), ACCENT, ACCENT.darkened(0.3), 1.0)
-	draw_circle(panel + Vector2(-1.6, 0), 0.9, Color("7dff9b"))
-	var blink_red := fmod(anim_time, 1.0) < 0.5 or dead
-	draw_circle(panel + Vector2(1.6, 0), 0.9, Color("ff6b74") if blink_red else Color("7a2a30"))
+	# Cuerpo: más alto y sobrio, con juntas, rejilla y una franja de color
+	var shape := DrawKit.rounded_rect(Rect2(body + Vector2(-10.5, -33), Vector2(21, 28)), 6.0, 4.0)
+	DrawKit.shape(self, shape, PEARL, METAL.darkened(0.08), 1.7)
+	draw_polygon(PackedVector2Array([body + Vector2(-f * 10.0, -30), body + Vector2(-f * 6.5, -30), body + Vector2(-f * 6.5, -6), body + Vector2(-f * 10.0, -6)]),
+		PackedColorArray([Color(0, 0, 0, 0.1), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.1)])) # lado en sombra
+	DrawKit.shape(self, DrawKit.rounded_rect(Rect2(body + Vector2(-10.5, -15.5), Vector2(21, 2.6)), 0.8), ACCENT.lightened(0.1), ACCENT.darkened(0.2), 0.0)
+	draw_line(body + Vector2(-10, -12.2), body + Vector2(10, -12.2), Color(OUTLINE, 0.25), 0.8) # junta
+	for k in 3: # rejilla de ventilación
+		var y := -10.5 + k * 1.6
+		draw_line(body + Vector2(-f * 8.0, y), body + Vector2(-f * 4.5, y), Color(OUTLINE, 0.35), 0.8)
+	draw_circle(body + Vector2(f * 5.0, -9.5), 1.9, Color(OUTLINE, 0.6))
+	draw_circle(body + Vector2(f * 5.0, -9.5), 1.1, ACCENT_WARM if fmod(anim_time, 1.6) < 1.3 or dead else ACCENT_WARM.darkened(0.5))
+	draw_arc(body + Vector2(0, -24), 8.5, PI * 1.15, PI * 1.4, 8, Color(1, 1, 1, 0.55), 1.4, true)
+	DrawKit.shine(self, body + Vector2(-6.5, -29.5), Vector2(2.0, 1.1), 0.75)
+	# Articulaciones de los hombros
+	for side in [-1.0, 1.0]:
+		draw_circle(body + Vector2(side * 10.0, -19.5), 1.9, METAL.darkened(0.35))
+		draw_circle(body + Vector2(side * 10.0, -19.5), 1.0, METAL)
 
-	# Visor y cara LED
-	var visor_center := body + Vector2(f * 1.5, -21.5)
-	var visor := DrawKit.rounded_rect(Rect2(visor_center + Vector2(-9, -5.5), Vector2(18, 11)), 4.0)
-	DrawKit.shape(self, visor, Color("2e3a58"), Color("101629"), 1.4)
+	# Visor estrecho con reflejo
+	var visor_center := body + Vector2(f * 1.5, -24.0)
+	var visor := DrawKit.rounded_rect(Rect2(visor_center + Vector2(-8.5, -3.8), Vector2(17, 7.6)), 3.5)
+	DrawKit.shape(self, visor, Color("2b3242"), Color("0e1118"), 1.3)
 	_draw_face(visor_center, f, on_floor)
-	draw_line(visor_center + Vector2(-6.5, -4.0), visor_center + Vector2(-2.5, -4.0), Color(1, 1, 1, 0.25), 1.2) # reflejo
+	draw_colored_polygon(PackedVector2Array([visor_center + Vector2(-7.5, -3.0), visor_center + Vector2(-4.5, -3.0), visor_center + Vector2(-7.0, 2.5), visor_center + Vector2(-8.0, 1.0)]),
+		Color(1, 1, 1, 0.1)) # reflejo
+	draw_line(visor_center + Vector2(-6.0, -3.1), visor_center + Vector2(6.0, -3.1), Color(1, 1, 1, 0.18), 0.8)
 
 	_draw_hand(front_hand)
 
@@ -518,69 +531,64 @@ func _draw_body(origin: Vector2, f: float) -> void:
 	if not dead:
 		match power:
 			Powers.Kind.HELMET:
-				Powers.draw_dome(self, body + Vector2(0, -27), 13.0, Powers.HELMET_COLOR)
-				var brim := DrawKit.rounded_rect(Rect2(body + Vector2(-14.5, -28.5), Vector2(29, 4)), 2.0)
-				DrawKit.shape(self, brim, Powers.HELMET_COLOR, Powers.HELMET_COLOR.darkened(0.3), 1.5)
+				Powers.draw_dome(self, body + Vector2(0, -29), 12.5, Powers.HELMET_COLOR)
+				var brim := DrawKit.rounded_rect(Rect2(body + Vector2(-13.5, -30.5), Vector2(27, 3.6)), 1.6)
+				DrawKit.shape(self, brim, Powers.HELMET_COLOR, Powers.HELMET_COLOR.darkened(0.3), 1.4)
 			Powers.Kind.MAGNET:
-				Powers.draw_icon(self, Powers.Kind.MAGNET, body + Vector2(0, -50), 0.6)
+				Powers.draw_icon(self, Powers.Kind.MAGNET, body + Vector2(0, -50), 0.55)
 				var pulse := fmod(anim_time, 1.0)
-				draw_arc(body + Vector2(0, -16), 14.0 + pulse * 20.0, 0.0, TAU, 32, Color(1, 0.3, 0.35, 0.4 * (1.0 - pulse)), 1.5, true)
+				draw_arc(body + Vector2(0, -18), 14.0 + pulse * 20.0, 0.0, TAU, 32, Color(1, 0.3, 0.35, 0.35 * (1.0 - pulse)), 1.2, true)
 
-	# Antena: se balancea con inercia y tiene una luz que late
-	var base := body + Vector2(0, -31 if power != Powers.Kind.HELMET else -40)
-	var tip := base + Vector2(0, -7) + antenna_lag
-	draw_line(base, tip, OUTLINE, 2.2, true)
-	draw_line(base, tip, METAL.darkened(0.3), 1.0, true)
-	var glow := 0.6 + 0.4 * sin(anim_time * 6.0)
+	# Antena fina: se balancea con inercia y tiene una luz pequeña que late
+	var base := body + Vector2(-f * 4.0, -33 if power != Powers.Kind.HELMET else -41)
+	var tip := base + Vector2(0, -6) + antenna_lag * 0.8
+	draw_line(base, tip, OUTLINE, 1.8, true)
+	draw_line(base, tip, METAL, 0.8, true)
+	var glow := 0.6 + 0.4 * sin(anim_time * 5.0)
 	var light := ANTENNA_LIGHT if not dead else Color("666a73")
-	draw_circle(tip, 5.0, Color(light, 0.22 * glow))
-	DrawKit.shape(self, DrawKit.circle(tip, 2.4, 12), light.lightened(0.4), light.darkened(0.2), 1.2)
-	draw_circle(tip + Vector2(-0.7, -0.7), 0.7, Color(1, 1, 1, 0.8))
+	draw_circle(tip, 3.6, Color(light, 0.25 * glow))
+	draw_circle(tip, 1.8, OUTLINE)
+	draw_circle(tip, 1.2, light.lightened(0.2 * glow))
 
 
-## Ojos y boca LED dentro del visor.
+## Ojos LED dentro del visor; la boca solo aparece en algunas expresiones.
 func _draw_face(center: Vector2, f: float, on_floor: bool) -> void:
 	var sleeping := idle_time > SLEEP_TIME
 	var hurt_face := invincible > 0.0
 	var color := LED_HURT if (dead or hurt_face) else LED
-	var look := Vector2(f * 0.8, clampf(velocity.y / 400.0, -1.0, 1.0) * 0.8)
+	var look := Vector2(f * 0.8, clampf(velocity.y / 400.0, -1.0, 1.0) * 0.6)
 	for side in [-1.0, 1.0]:
-		var eye := center + Vector2(side * 4.3, -1.0)
+		var eye := center + Vector2(side * 3.7, -0.2)
 		if dead:
-			draw_line(eye + Vector2(-1.8, -1.8), eye + Vector2(1.8, 1.8), color, 1.4, true)
-			draw_line(eye + Vector2(-1.8, 1.8), eye + Vector2(1.8, -1.8), color, 1.4, true)
+			draw_line(eye + Vector2(-1.5, -1.5), eye + Vector2(1.5, 1.5), color, 1.2, true)
+			draw_line(eye + Vector2(-1.5, 1.5), eye + Vector2(1.5, -1.5), color, 1.2, true)
 		elif finished:
-			draw_arc(eye + Vector2(0, 1.2), 2.2, PI, TAU, 8, color, 1.5, true) # ^ ^
+			draw_arc(eye + Vector2(0, 1.0), 1.8, PI, TAU, 8, color, 1.3, true) # ^ ^
 		elif hurt_face:
 			draw_polyline(PackedVector2Array([
-				eye + Vector2(side * 2.0, -1.6), eye + Vector2(-side * 1.6, 0), eye + Vector2(side * 2.0, 1.6),
-			]), color, 1.4, true)
+				eye + Vector2(side * 1.7, -1.3), eye + Vector2(-side * 1.3, 0), eye + Vector2(side * 1.7, 1.3),
+			]), color, 1.2, true)
 		elif sleeping or blink > 0.0:
-			draw_line(eye + Vector2(-2.0, 0.6), eye + Vector2(2.0, 0.6), Color(color, 0.6 if sleeping else 1.0), 1.4)
+			draw_line(eye + Vector2(-1.6, 0.4), eye + Vector2(1.6, 0.4), Color(color, 0.5 if sleeping else 1.0), 1.1)
 		else:
-			var height := 5.0
+			var height := 3.4
 			if not on_floor and velocity.y < -200.0:
-				height = 6.0 # sorpresa al subir
+				height = 4.2 # sorpresa al subir
 			elif absf(velocity.x) > RUN_SPEED * 0.8:
-				height = 3.6 # concentrado al correr
-			var led := DrawKit.rounded_rect(Rect2(eye + look + Vector2(-1.6, -height / 2.0), Vector2(3.2, height)), 1.5)
-			draw_colored_polygon(DrawKit.grow(led, 1.2), Color(color, 0.25))
+				height = 2.4 # concentrado al correr
+			var led := DrawKit.rounded_rect(Rect2(eye + look + Vector2(-1.1, -height / 2.0), Vector2(2.2, height)), 1.0)
+			draw_colored_polygon(DrawKit.grow(led, 0.9), Color(color, 0.22))
 			draw_colored_polygon(led, color)
-			draw_circle(eye + look + Vector2(-0.6, -height / 2.0 + 1.0), 0.45, Color(1, 1, 1, 0.8))
-	# Boca LED
-	var mouth := center + Vector2(0, 3.2)
+	# Boca: solo en alegría, susto/daño o sorpresa
+	var mouth := center + Vector2(0, 2.4)
 	if dead or hurt_face:
-		draw_arc(mouth + Vector2(0, 1.5), 1.6, PI + 0.4, TAU - 0.4, 6, color, 1.0, true)
+		draw_arc(mouth + Vector2(0, 1.2), 1.3, PI + 0.4, TAU - 0.4, 6, color, 0.9, true)
 	elif finished:
-		draw_arc(mouth + Vector2(0, -0.6), 2.2, 0.2, PI - 0.2, 8, color, 1.2, true)
-	elif sleeping:
-		draw_line(mouth + Vector2(-1.2, 0), mouth + Vector2(1.2, 0), Color(color, 0.6), 1.0)
-	elif not on_floor and absf(velocity.y) > 250.0:
-		draw_arc(mouth, 1.1, 0.0, TAU, 8, color, 1.0, true)
-	else:
-		draw_arc(mouth + Vector2(0, -0.5), 1.6, 0.3, PI - 0.3, 6, color, 1.0, true)
+		draw_arc(mouth + Vector2(0, -0.6), 1.8, 0.2, PI - 0.2, 8, color, 1.0, true)
+	elif not on_floor and absf(velocity.y) > 300.0:
+		draw_arc(mouth, 0.8, 0.0, TAU, 8, color, 0.9, true)
 
 
 func _draw_hand(pos: Vector2) -> void:
-	DrawKit.shape(self, DrawKit.circle(pos, 3.0, 12), METAL.lightened(0.2), METAL.darkened(0.3), 1.4)
-	draw_circle(pos + Vector2(-0.8, -0.9), 0.9, Color(1, 1, 1, 0.6))
+	DrawKit.shape(self, DrawKit.circle(pos, 2.6, 12), PEARL, METAL.darkened(0.15), 1.3)
+	draw_circle(pos + Vector2(-0.7, -0.8), 0.7, Color(1, 1, 1, 0.7))
